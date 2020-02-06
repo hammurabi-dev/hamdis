@@ -1,9 +1,4 @@
-// hampix is a multigrid spherical surface pixelization package
-// based on HEALPix library
-// in the very first version, we set only single layer multigrid
-// while focusing on implementing basic functions
-// but we leave the structure open to be upgraded
-// use HEALPix nested ordering scheme only
+// hampix is a pointing-based spherical surface pixelization package
 
 #ifndef HAMMURABI_PIX_H
 #define HAMMURABI_PIX_H
@@ -14,10 +9,91 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <hampixp.h>
 
+// pixel data type T
+// key structure of each sample point
+template <typename T>
+class Node {
+protected:
+  // pointing
+  Hampixp point;
+  // pixel data
+  T data {static_cast<T>(0)};
+  // unique pointer of vector of pointer to neighboring pixels
+  std::unique_ptr<std::vector<Node<T> *>> neighbor;
+  
+public:
+  // constructor
+  Node() {
+    neighbor = std::make_unique<std::vector<Node<T> *>>();
+  }
+  // direct constr
+  Node(const Hampixp &ptr, const T &val) : point(ptr), data(val) {}
+  // copy assign
+  Node& operator=(const Node<T> &n) noexcept {
+    point = n.point;
+    data = n.data;
+    neighbor.reset(new std::vector<Node<T> *>(n.ref_neighbor()));
+    return *this;
+  }
+  // move assign
+  Node& operator=(Node<T> &n) noexcept {
+    point = std::move(n.point);
+    data = std::move(n.data);
+    neighbor = std::move(n.neighbor);
+    return *this;
+  }
+  // copy constr
+  Node(const Node<T> &n) noexcept {
+    point = n.point;
+    data = n.data;
+    neighbor.reset(new std::vector<Node<T> *>(n.ref_neighbor()));
+  }
+  // move constr
+  Node(Node<T> &&n) noexcept {
+    point = std::move(n.point);
+    data = std::move(n.data);
+    neighbor = std::move(n.neighbor);
+  }
+  // destr
+  virtual ~Node() = default;
+  
+  // extract sky position
+  virtual Hampixp get_pointing() const{
+    return point;
+  }
+  // extract sky information
+  virtual T get_data() const{
+    return data;
+  }
+  // extract neighbor ptr
+  virtual std::vector<Node<T> *> * get_neighbor() const{
+    return neighbor.get();
+  }
+  // extract neighbor content
+  // designed for class copy semantics
+  virtual std::vector<Node<T> *> ref_neighbor() const{
+    return *neighbor;
+  }
+  // update sky position
+  virtual void update_pointing(const Hampixp& new_point) {
+    point = new_point;
+  }
+  // update sky information
+  virtual void update_data(const T& new_data) {
+    data = new_data;
+  }
+  // add neighbor
+  virtual void add_neighbor(Node<T> *n) {
+    neighbor->push_back(n);
+  }
+};
+
+/*
 // pixel info data type T
-// minimal pixelization nside N
-template <typename T> class Hampix {
+template <typename T>
+class Hampix {
 public:
   // default constructor
   Hampix() = default;
@@ -32,81 +108,28 @@ public:
   }
   // default destructor
   ~Hampix() = default;
-
-#ifdef NDEBUG
-private:
-#endif
-  // key structure of each pixel
-  class Pix {
-  public:
-    // constructor
-    Pix() : info{static_cast<T>(0)} {}
-    ~Pix() = default;
-    // pixel info
-    T info;
-    // pixelization HEALPix Nside tag
-    unsigned int nside{0};
-    // pixelization index at current Nside level
-    std::size_t index{0};
-    // pointer to nested parent pixel
-    Pix *paxil{nullptr};
-    // pointer to nested child pixels
-    std::vector<Pix *> chxil{nullptr};
-  };
-  // map holder
-  std::unique_ptr<std::vector<Pix>> map;
-  // check HEALPix Nside setting
-  bool nside_safety(const unsigned int &) const;
-  // check HEALPix Npix setting
-  bool npix_safety(const std::size_t &) const;
-  // Nside to Npix calculator
-  inline std::size_t nside2npix(const unsigned int &n) const {
-    return static_cast<std::size_t>(12) * static_cast<std::size_t>(n) *
-           static_cast<std::size_t>(n);
-  }
-  // Npix to Nside calculator
-  inline unsigned int npix2nside(const std::size_t &n) const {
-    return static_cast<unsigned int>(std::sqrt(n / 12));
-  }
-
-public:
-  // initialize map with given Nside
-  // all pix info assigned to zero
+  // map holder, unique pointer of vector of Node
+  std::unique_ptr<std::vector<Node>> map;
+  // initialize map with given sample number
+  // all Node info assigned to zero
+  // no neighboring relation assigned
   void initialize(const unsigned int &);
-  // initialize map from external std::vector
-  void initialize(const std::vector<T> &);
+  // initialize map with single value
+  // all Node info assigned by the given value
+  // no neighboring relation assigned
+  void initialize(const T &);
   // print to content of each pix to screen
   void print() const;
   // pix2ang
 };
 
 template <typename T>
-bool Hampix<T>::nside_safety(const unsigned int &suspect) const {
-  const double spec{std::log2(suspect * double(suspect > 1))};
-  return (spec == static_cast<unsigned int>(spec));
+void Hampix<T>::initialize(const unsigned int &N) {
+  map = std::make_unique<std::vector<Node>>(N);
 }
 
 template <typename T>
-bool Hampix<T>::npix_safety(const std::size_t &suspect) const {
-  const double spec{std::log2(suspect * double(suspect > 1) / 12)};
-  return (spec == static_cast<unsigned int>(spec));
-}
-
-template <typename T> void Hampix<T>::initialize(const unsigned int &N) {
-  if (nside_safety(N)) { // Nside setting check
-    map = std::make_unique<std::vector<Pix>>(12 * N * N);
-    std::size_t idx{0};
-    for (auto &i : *map) { // initialize nside and index
-      i.nside = N;
-      i.index = idx;
-      idx++;
-    }
-  } else {
-    throw std::runtime_error("wrong Nside setting");
-  }
-}
-
-template <typename T> void Hampix<T>::initialize(const std::vector<T> &v) {
+void Hampix<T>::initialize(const T &v) {
   const std::size_t length = v.size();
   if (npix_safety(length)) { // Npix setting check
     map = std::make_unique<std::vector<Pix>>(length);
@@ -123,12 +146,13 @@ template <typename T> void Hampix<T>::initialize(const std::vector<T> &v) {
   }
 }
 
-template <typename T> void Hampix<T>::print() const {
+template <typename T>
+void Hampix<T>::print() const {
   for (auto &i : *map) {
     std::cout << "info: " << i.info << "\t"
               << "Nside: " << i.nside << "\t"
               << "index: " << i.index << "\t" << std::endl;
   }
 }
-
+*/
 #endif

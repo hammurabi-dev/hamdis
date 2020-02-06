@@ -9,14 +9,14 @@
 #include <type_traits>
 #include <vector>
 
-template <int dim, typename T> class hamvec {
+template <int dim, typename T> class Hamvec {
 protected:
   std::vector<T> ele;
 
 public:
   // default ctor
   // initialize with 0
-  hamvec() {
+  Hamvec() {
     switch (dim) {
     case 1:
       this->ele = {T(0)};
@@ -32,36 +32,36 @@ public:
       break;
     }
   }
-  virtual ~hamvec() = default;
+  virtual ~Hamvec() = default;
   // 1D vector
-  hamvec<dim, T>(const T &x) {
+  Hamvec<dim, T>(const T &x) {
     assert(dim == 1);
     this->ele.push_back(x);
   }
   // 2D vector
-  hamvec<dim, T>(const T &x, const T &y) {
+  Hamvec<dim, T>(const T &x, const T &y) {
     assert(dim == 2);
     this->ele.push_back(x);
     this->ele.push_back(y);
   }
   // 3D vector
-  hamvec<dim, T>(const T &x, const T &y, const T &z) {
+  Hamvec<dim, T>(const T &x, const T &y, const T &z) {
     assert(dim == 3);
     this->ele.push_back(x);
     this->ele.push_back(y);
     this->ele.push_back(z);
   }
   // copy ctor
-  hamvec<dim, T>(const hamvec<dim, T> &v) { this->ele = v.content(); }
+  Hamvec<dim, T>(const Hamvec<dim, T> &v) { this->ele = v.content(); }
   // move ctor
-  hamvec<dim, T>(hamvec<dim, T> &&v) : ele(std::move(v.content())) {}
+  Hamvec<dim, T>(Hamvec<dim, T> &&v) : ele(std::move(v.content())) {}
   // copy assign
-  hamvec<dim, T> &operator=(const hamvec<dim, T> &v) noexcept {
+  Hamvec<dim, T> &operator=(const Hamvec<dim, T> &v) noexcept {
     this->ele = std::move(v.content());
     return *this;
   }
   // move assign
-  hamvec<dim, T> &operator=(hamvec<dim, T> &&v) noexcept {
+  Hamvec<dim, T> &operator=(Hamvec<dim, T> &&v) noexcept {
     this->ele = std::move(v.content());
     return *this;
   }
@@ -76,8 +76,8 @@ public:
   // operator +
   // cast argument to the same template type
   template <typename R>
-  hamvec<dim, T> operator+(const hamvec<dim, R> &v) const {
-    hamvec<dim, T> tmp(*this);
+  Hamvec<dim, T> operator+(const Hamvec<dim, R> &v) const {
+    Hamvec<dim, T> tmp(*this);
     for (unsigned int i = 0; i < dim; ++i) {
       tmp[i] += static_cast<T>(v[i]);
     }
@@ -85,7 +85,7 @@ public:
   }
   // operator +=
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> &operator+=(const hamvec<dim, R> &v) {
+  template <typename R> Hamvec<dim, T> &operator+=(const Hamvec<dim, R> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
       this->ele[i] += static_cast<T>(v[i]);
     }
@@ -94,8 +94,8 @@ public:
   // operator -
   // cast argument to the same template type
   template <typename R>
-  hamvec<dim, T> operator-(const hamvec<dim, R> &v) const {
-    hamvec<dim, T> tmp(*this);
+  Hamvec<dim, T> operator-(const Hamvec<dim, R> &v) const {
+    Hamvec<dim, T> tmp(*this);
     for (unsigned int i = 0; i < dim; ++i) {
       tmp[i] -= static_cast<T>(v[i]);
     }
@@ -103,7 +103,7 @@ public:
   }
   // operator -=
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> &operator-=(const hamvec<dim, R> &v) {
+  template <typename R> Hamvec<dim, T> &operator-=(const Hamvec<dim, R> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
       this->ele[i] -= static_cast<T>(v[i]);
     }
@@ -111,8 +111,8 @@ public:
   }
   // operator *
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> operator*(const R &s) const {
-    hamvec<dim, T> tmp(*this);
+  template <typename R> Hamvec<dim, T> operator*(const R &s) const {
+    Hamvec<dim, T> tmp(*this);
     for (unsigned int i = 0; i < dim; ++i) {
       tmp[i] *= static_cast<T>(s);
     }
@@ -120,7 +120,7 @@ public:
   }
   // operaotr *=
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> &operator*=(const R &s) {
+  template <typename R> Hamvec<dim, T> &operator*=(const R &s) {
     for (unsigned int i = 0; i < dim; ++i) {
       this->ele[i] *= static_cast<T>(s);
     }
@@ -128,8 +128,8 @@ public:
   }
   // operator /
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> operator/(const R &s) const {
-    hamvec<dim, T> tmp(*this);
+  template <typename R> Hamvec<dim, T> operator/(const R &s) const {
+    Hamvec<dim, T> tmp(*this);
     for (unsigned int i = 0; i < dim; ++i) {
       tmp[i] /= static_cast<T>(s);
     }
@@ -137,7 +137,7 @@ public:
   }
   // operator /=
   // cast argument to the same template type
-  template <typename R> hamvec<dim, T> &operator/=(const R &s) {
+  template <typename R> Hamvec<dim, T> &operator/=(const R &s) {
     assert(s != 0);
     for (unsigned int i = 0; i < dim; ++i) {
       this->ele[i] /= static_cast<T>(s);
@@ -145,7 +145,7 @@ public:
     return *this;
   }
   // operator ==
-  bool operator==(const hamvec<dim, T> &v) {
+  bool operator==(const Hamvec<dim, T> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
       if (this->ele[i] != v[i]) {
         return false;
@@ -154,7 +154,7 @@ public:
     return true;
   }
   // operator !=
-  bool operator!=(const hamvec<dim, T> &v) {
+  bool operator!=(const Hamvec<dim, T> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
       if (this->ele[i] != v[i]) {
         return true;
@@ -192,8 +192,8 @@ public:
   }
   // versor
   // cast into double type
-  hamvec<dim, double> versor() const {
-    hamvec<dim, double> tmp;
+  Hamvec<dim, double> versor() const {
+    Hamvec<dim, double> tmp;
     for (unsigned int i = 0; i < dim; ++i)
       tmp[i] = static_cast<double>(this->ele[i]);
     const auto l2{tmp.lengthsq()};
@@ -203,7 +203,7 @@ public:
   }
   // inner product
   // cast into double type
-  template <typename R> double dotprod(const hamvec<dim, R> &v) const {
+  template <typename R> double dotprod(const Hamvec<dim, R> &v) const {
     double tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
       tmp += static_cast<double>(this->ele[i]) * static_cast<double>(v[i]);
@@ -213,9 +213,9 @@ public:
   // cross product, works in 3D only
   // cast into double type
   template <typename R>
-  hamvec<dim, double> crossprod(const hamvec<dim, R> &v) const {
+  Hamvec<dim, double> crossprod(const Hamvec<dim, R> &v) const {
     assert(dim == 3);
-    hamvec<dim, double> tmp;
+    Hamvec<dim, double> tmp;
     for (unsigned int i = 0; i < dim; ++i) {
       tmp[i] = (static_cast<double>(this->ele[(i + 1) % 3]) *
                     static_cast<double>(v[(i + 2) % 3]) -
@@ -225,7 +225,7 @@ public:
     return tmp;
   }
   // osteam function
-  friend std::ostream &operator<<(std::ostream &os, const hamvec<dim, T> &v) {
+  friend std::ostream &operator<<(std::ostream &os, const Hamvec<dim, T> &v) {
     os << dim << "D vector: ";
     for (unsigned int i = 0; i < dim; ++i) {
       os << v[i] << "\t";
