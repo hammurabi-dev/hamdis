@@ -25,16 +25,17 @@ TEST(node, basic) {
   EXPECT_NEAR(node_dft.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_dft.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
   
-  // move & copy
+  // move
   Node<double> node_mvconstr(std::move(node_dft));
-  Node<double> node_cpassign;
-  node_cpassign = std::move(node_mvconstr);
-  EXPECT_NEAR(node_cpassign.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
-  EXPECT_NEAR(node_cpassign.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
-  
-  Node<double> node_cpconstr(node_cpassign);
   Node<double> node_mvassign;
-  node_mvassign = node_mvconstr;
+  node_mvassign = std::move(node_mvconstr);
   EXPECT_NEAR(node_mvassign.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_mvassign.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
+  
+  // copy
+  Node<double> node_cpconstr(node_mvassign);
+  Node<double> node_cpassign;
+  node_cpassign = node_cpconstr;
+  EXPECT_NEAR(node_cpassign.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
+  EXPECT_NEAR(node_cpassign.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
 }

@@ -36,23 +36,31 @@ TEST(Hampixp, basic) {
   ptr4 = ptr3;
   EXPECT_EQ(ptr4.theta(), double(0.3));
   EXPECT_EQ(ptr4.phi(), double(0.4));
+  
+  // move
+  Hampixp ptr5(std::move(ptr2));
+  EXPECT_EQ(ptr5.theta(), double(0.1));
+  EXPECT_EQ(ptr5.phi(), double(0.2));
+  ptr5 = std::move(ptr4);
+  EXPECT_EQ(ptr5.theta(), double(0.3));
+  EXPECT_EQ(ptr5.phi(), double(0.4));
 
   // norm
-  Hampixp ptr5(1.2 * cgs_pi, 2.1 * cgs_pi);
-  EXPECT_NEAR(ptr5.theta(), double(0.2 * cgs_pi), 1.0e-10);
-  EXPECT_NEAR(ptr5.phi(), double(0.1 * cgs_pi), 1.0e-10);
-  ptr5.theta(-1.2 * cgs_pi);
-  EXPECT_NEAR(ptr5.theta(), double(0.8 * cgs_pi), 1.0e-10);
-  ptr5.theta(-0.2 * cgs_pi);
-  EXPECT_NEAR(ptr5.theta(), double(0.8 * cgs_pi), 1.0e-10);
-  ptr5.theta(-0.9 * cgs_pi);
-  EXPECT_NEAR(ptr5.theta(), double(0.1 * cgs_pi), 1.0e-10);
-  ptr5.phi(-2.3 * cgs_pi);
-  EXPECT_NEAR(ptr5.phi(), double(1.7 * cgs_pi), 1.0e-10);
-  ptr5.phi(-0.8 * cgs_pi);
-  EXPECT_NEAR(ptr5.phi(), double(1.2 * cgs_pi), 1.0e-10);
-  ptr5.phi(-1.4 * cgs_pi);
-  EXPECT_NEAR(ptr5.phi(), double(0.6 * cgs_pi), 1.0e-10);
+  Hampixp ptr6(1.2 * cgs_pi, 2.1 * cgs_pi);
+  EXPECT_NEAR(ptr6.theta(), double(0.2 * cgs_pi), 1.0e-10);
+  EXPECT_NEAR(ptr6.phi(), double(0.1 * cgs_pi), 1.0e-10);
+  ptr6.theta(-1.2 * cgs_pi);
+  EXPECT_NEAR(ptr6.theta(), double(0.8 * cgs_pi), 1.0e-10);
+  ptr6.theta(-0.2 * cgs_pi);
+  EXPECT_NEAR(ptr6.theta(), double(0.8 * cgs_pi), 1.0e-10);
+  ptr6.theta(-0.9 * cgs_pi);
+  EXPECT_NEAR(ptr6.theta(), double(0.1 * cgs_pi), 1.0e-10);
+  ptr6.phi(-2.3 * cgs_pi);
+  EXPECT_NEAR(ptr6.phi(), double(1.7 * cgs_pi), 1.0e-10);
+  ptr6.phi(-0.8 * cgs_pi);
+  EXPECT_NEAR(ptr6.phi(), double(1.2 * cgs_pi), 1.0e-10);
+  ptr6.phi(-1.4 * cgs_pi);
+  EXPECT_NEAR(ptr6.phi(), double(0.6 * cgs_pi), 1.0e-10);
 }
 
 TEST(Hampixp, vector) {

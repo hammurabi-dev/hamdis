@@ -1,5 +1,3 @@
-// hampix is a pointing-based spherical surface pixelization package
-
 #ifndef HAMMURABI_PIX_H
 #define HAMMURABI_PIX_H
 
@@ -11,7 +9,7 @@
 #include <vector>
 #include <hampixp.h>
 
-// pixel data type T
+// data type T
 // key structure of each sample point
 template <typename T>
 class Node {
@@ -36,7 +34,7 @@ public:
     return *this;
   }
   // move assign
-  Node& operator=(Node<T> &n) noexcept {
+  Node& operator=(Node<T> &&n) noexcept {
     this->Pointing = std::move(n.Pointing);
     this->Data = std::move(n.Data);
     return *this;
@@ -71,27 +69,38 @@ public:
     this->Data = new_data;
   }
 };
-
 /*
-// pixel info data type T
+// data type T
+// hosts a list sampling points
 template <typename T>
 class Hampix {
+protected:
+  // map holder, unique pointer of vector of Node
+  std::unique_ptr<std::vector<Node>> Map;
+  
 public:
-  // default constructor
-  Hampix() = default;
-  // copy constructor
-  Hampix(const Hampix &m) { map.reset(new std::vector<Pix>(*(m.map.get()))); }
-  // move constructor
-  Hampix(Hampix &&m) noexcept : map{std::move(m.map)} {}
-  // move assignment, no copy assignement since no const map
-  Hampix &operator=(Hampix &m) noexcept {
-    map = std::move(m.map);
+  // dft constr
+  Hampix() {
+    thos->Map = std::make_unique<std::vector<Node>> ();
+  }
+  // copy constr
+  Hampix(const Hampix &m) {
+    this->Map.reset(new std::vector<Pix>(*(m.Map.get())));
+  }
+  // move constr
+  Hampix(Hampix &&m) noexcept {
+    this->Map = std::move(m.Map)
+  }
+  // move assign
+  Hampix& operator=(Hampix &m) noexcept {
+    this->Map = std::move(m.Map);
     return *this;
   }
-  // default destructor
+  // copy assignment
+  Hampix& operator=(const Hampix &&m)
+  // dft destr
   ~Hampix() = default;
-  // map holder, unique pointer of vector of Node
-  std::unique_ptr<std::vector<Node>> map;
+  
   // initialize map with given sample number
   // all Node info assigned to zero
   // no neighboring relation assigned
