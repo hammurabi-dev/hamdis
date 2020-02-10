@@ -8,36 +8,26 @@ OPTION(ON_DOCKER "Build on docker image" ON)
 OPTION(BUILD_SHARED_LIB "Build shared library" ON)
 OPTION(ENABLE_REPORT "Enable verbose report" ON)
 #-------------- instruction ------------------#
-#
-# make sure your compiler is GNU or INTEL,
 # ENABLE_TESTING by default ON,
-# ENABLE_TIMING is also not necessary for users
-# ON_DOCKER by defauly ON, we highly recommend Docker image for non-HPC tasks
-# but if install manually, switch it off and modify the path hints listed below
-# BUILD_SHARED_LIB by default ON
-# you will be overwhelmed by ENABLE_REPORT, switch it off for non-testing tasks
+# ENABLE_TIMING is also not necessary for users,
+# ON_DOCKER by defauly ON, we highly recommend Docker image for non-HPC tasks,
+# but if install manually, switch it off and modify the path hints listed below,
+# BUILD_SHARED_LIB by default ON,
+# you will be overwhelmed by ENABLE_REPORT, switch it off for non-testing tasks,
 # 
-# you have to specify your local paths of external libraries just below here
-# in some special cases you have to modify FIND_PATH/FIND_LIBRARY functions
+# you have to specify your local paths of external libraries just below here,
+# in some special cases you have to modify FIND_PATH/FIND_LIBRARY functions,
 #
-# in some special cases, you may want to manually fix LFLAGS or CFLAGS
-# 
-# update your CMake as much as you can
+# in some special cases, you may want to manually fix LFLAGS or CFLAGS,
 #
-# if you add new modules/derived classes beyond original code
-# please manually add source file paths to SET(SRC_FILES ...) function
-#
-# the last resort would be manually calling homemade Makefile building system
-# you can find cached building files in mfcache
-#
-# if even the last resort fails you
-# complain your issue to J.Wang (jiwang@sissa.it)
+# if you add new modules/derived classes beyond original code,
+# please manually add source file paths to SET(SRC_FILES ...) function,
 #
 # @ enthusiastic or paranoid developers:
-# we use Google Test for tests
-# Google Test package is assembled INTO testing modules manually
-# you can either install GoogleTest and cp src dir into install path
-# or just download GoogleTest and specify root dir to GTEST_HINTS
+# we use Google Test for tests,
+# Google Test package is assembled INTO testing modules manually,
+# you can either install GoogleTest and cp src dir into install path,
+# or just download GoogleTest and specify root dir to GTEST_HINTS,
 #--------------------------------------------#
 IF(ON_DOCKER)
 	SET(GTEST_HINTS /usr/local)

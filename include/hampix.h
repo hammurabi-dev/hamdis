@@ -17,76 +17,58 @@ template <typename T>
 class Node {
 protected:
   // pointing
-  Hampixp point;
+  Hampixp Pointing;
   // pixel data
-  T data {static_cast<T>(0)};
-  // unique pointer of vector of pointer to neighboring pixels
-  std::unique_ptr<std::vector<Node<T> *>> neighbor;
+  T Data {static_cast<T>(0)};
   
 public:
   // constructor
-  Node() {
-    neighbor = std::make_unique<std::vector<Node<T> *>>();
-  }
+  Node() = default;
   // direct constr
-  Node(const Hampixp &ptr, const T &val) : point(ptr), data(val) {}
+  Node(const Hampixp &ptr, const T &val) {
+    this->Pointing = ptr;
+    this->Data = val;
+  }
   // copy assign
   Node& operator=(const Node<T> &n) noexcept {
-    point = n.point;
-    data = n.data;
-    neighbor.reset(new std::vector<Node<T> *>(n.ref_neighbor()));
+    this->Pointing = n.Pointing;
+    this->Data = n.Data;
     return *this;
   }
   // move assign
   Node& operator=(Node<T> &n) noexcept {
-    point = std::move(n.point);
-    data = std::move(n.data);
-    neighbor = std::move(n.neighbor);
+    this->Pointing = std::move(n.Pointing);
+    this->Data = std::move(n.Data);
     return *this;
   }
   // copy constr
   Node(const Node<T> &n) noexcept {
-    point = n.point;
-    data = n.data;
-    neighbor.reset(new std::vector<Node<T> *>(n.ref_neighbor()));
+    this->Pointing = n.Pointing;
+    this->Data = n.Data;
   }
   // move constr
   Node(Node<T> &&n) noexcept {
-    point = std::move(n.point);
-    data = std::move(n.data);
-    neighbor = std::move(n.neighbor);
+    this->Pointing = std::move(n.Pointing);
+    this->Data = std::move(n.Data);
   }
   // destr
   virtual ~Node() = default;
   
   // extract sky position
-  virtual Hampixp get_pointing() const{
-    return point;
+  virtual Hampixp pointing() const{
+    return this->Pointing;
   }
   // extract sky information
-  virtual T get_data() const{
-    return data;
-  }
-  // extract neighbor ptr
-  virtual std::vector<Node<T> *> * get_neighbor() const{
-    return neighbor.get();
-  }
-  // extract neighbor content
-  // designed for class copy semantics
-  virtual std::vector<Node<T> *> ref_neighbor() const{
-    return *neighbor;
+  virtual T data() const{
+    return Data;
   }
   // update sky position
-  virtual void update_pointing(const Hampixp& new_point) {
-    point = new_point;
+  virtual void pointing(const Hampixp& new_pointing) {
+    this->Pointing = new_pointing;
   }
   // update sky information
-  virtual void update_data(const T& new_data) {
-    data = new_data;
-  }
-  // add neighbor
-  virtual void add_neighbor(Node<T> *n) {
-    neighbor->push_back(n);
+  virtual void data(const T& new_data) {
+    this->Data = new_data;
   }
 };
 

@@ -11,7 +11,7 @@
 
 template <int dim, typename T> class Hamvec {
 protected:
-  std::vector<T> ele;
+  std::vector<T> Ele;
 
 public:
   // default ctor
@@ -19,13 +19,13 @@ public:
   Hamvec() {
     switch (dim) {
     case 1:
-      this->ele = {T(0)};
+      this->Ele = {T(0)};
       break;
     case 2:
-      this->ele = {T(0), T(0)};
+      this->Ele = {T(0), T(0)};
       break;
     case 3:
-      this->ele = {T(0), T(0), T(0)};
+      this->Ele = {T(0), T(0), T(0)};
       break;
     default:
       std::cerr << "unsupported dimension";
@@ -36,43 +36,43 @@ public:
   // 1D vector
   Hamvec<dim, T>(const T &x) {
     assert(dim == 1);
-    this->ele.push_back(x);
+    this->Ele.push_back(x);
   }
   // 2D vector
   Hamvec<dim, T>(const T &x, const T &y) {
     assert(dim == 2);
-    this->ele.push_back(x);
-    this->ele.push_back(y);
+    this->Ele.push_back(x);
+    this->Ele.push_back(y);
   }
   // 3D vector
   Hamvec<dim, T>(const T &x, const T &y, const T &z) {
     assert(dim == 3);
-    this->ele.push_back(x);
-    this->ele.push_back(y);
-    this->ele.push_back(z);
+    this->Ele.push_back(x);
+    this->Ele.push_back(y);
+    this->Ele.push_back(z);
   }
   // copy ctor
-  Hamvec<dim, T>(const Hamvec<dim, T> &v) { this->ele = v.content(); }
+  Hamvec<dim, T>(const Hamvec<dim, T> &v) { this->Ele = v.Ele; }
   // move ctor
-  Hamvec<dim, T>(Hamvec<dim, T> &&v) : ele(std::move(v.content())) {}
+  Hamvec<dim, T>(Hamvec<dim, T> &&v) { this->Ele = std::move(v.Ele); }
   // copy assign
-  Hamvec<dim, T> &operator=(const Hamvec<dim, T> &v) noexcept {
-    this->ele = std::move(v.content());
+  Hamvec<dim, T>& operator=(const Hamvec<dim, T> &v) noexcept {
+    this->Ele = std::move(v.Ele);
     return *this;
   }
   // move assign
-  Hamvec<dim, T> &operator=(Hamvec<dim, T> &&v) noexcept {
-    this->ele = std::move(v.content());
+  Hamvec<dim, T>& operator=(Hamvec<dim, T> &&v) noexcept {
+    this->Ele = std::move(v.Ele);
     return *this;
   }
   // constant operator []
-  T operator[](const int &i) const { return this->ele[i]; }
+  T operator[](const int &i) const { return this->Ele[i]; }
   // operator []
-  T &operator[](const int &i) { return this->ele[i]; }
-  // get constant std::vector<T> ele
-  const std::vector<T> content() const { return this->ele; }
-  // get std::vector<T> ele
-  std::vector<T> &content() { return this->ele; }
+  T &operator[](const int &i) { return this->Ele[i]; }
+  // get constant std::vector<T> Ele
+  const std::vector<T> content() const { return this->Ele; }
+  // get std::vector<T> Ele
+  std::vector<T> &content() { return this->Ele; }
   // operator +
   // cast argument to the same template type
   template <typename R>
@@ -87,7 +87,7 @@ public:
   // cast argument to the same template type
   template <typename R> Hamvec<dim, T> &operator+=(const Hamvec<dim, R> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
-      this->ele[i] += static_cast<T>(v[i]);
+      this->Ele[i] += static_cast<T>(v[i]);
     }
     return *this;
   }
@@ -105,7 +105,7 @@ public:
   // cast argument to the same template type
   template <typename R> Hamvec<dim, T> &operator-=(const Hamvec<dim, R> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
-      this->ele[i] -= static_cast<T>(v[i]);
+      this->Ele[i] -= static_cast<T>(v[i]);
     }
     return *this;
   }
@@ -122,7 +122,7 @@ public:
   // cast argument to the same template type
   template <typename R> Hamvec<dim, T> &operator*=(const R &s) {
     for (unsigned int i = 0; i < dim; ++i) {
-      this->ele[i] *= static_cast<T>(s);
+      this->Ele[i] *= static_cast<T>(s);
     }
     return *this;
   }
@@ -140,14 +140,14 @@ public:
   template <typename R> Hamvec<dim, T> &operator/=(const R &s) {
     assert(s != 0);
     for (unsigned int i = 0; i < dim; ++i) {
-      this->ele[i] /= static_cast<T>(s);
+      this->Ele[i] /= static_cast<T>(s);
     }
     return *this;
   }
   // operator ==
   bool operator==(const Hamvec<dim, T> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
-      if (this->ele[i] != v[i]) {
+      if (this->Ele[i] != v[i]) {
         return false;
       }
     }
@@ -156,7 +156,7 @@ public:
   // operator !=
   bool operator!=(const Hamvec<dim, T> &v) {
     for (unsigned int i = 0; i < dim; ++i) {
-      if (this->ele[i] != v[i]) {
+      if (this->Ele[i] != v[i]) {
         return true;
       }
     }
@@ -167,7 +167,7 @@ public:
   double length() const {
     double tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      const double cache = static_cast<double>(this->ele[i]);
+      const double cache = static_cast<double>(this->Ele[i]);
       tmp += cache * cache;
     }
     return std::sqrt(tmp);
@@ -177,7 +177,7 @@ public:
   double lengthsq() const {
     double tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      const double cache = static_cast<double>(this->ele[i]);
+      const double cache = static_cast<double>(this->Ele[i]);
       tmp += cache * cache;
     }
     return tmp;
@@ -187,7 +187,7 @@ public:
   void flip() {
     assert(std::is_signed<T>::value);
     for (unsigned int i = 0; i < dim; ++i) {
-      this->ele[i] *= static_cast<T>(-1.0);
+      this->Ele[i] *= static_cast<T>(-1.0);
     }
   }
   // versor
@@ -195,7 +195,7 @@ public:
   Hamvec<dim, double> versor() const {
     Hamvec<dim, double> tmp;
     for (unsigned int i = 0; i < dim; ++i)
-      tmp[i] = static_cast<double>(this->ele[i]);
+      tmp[i] = static_cast<double>(this->Ele[i]);
     const auto l2{tmp.lengthsq()};
     if (l2 != 0)
       tmp /= std::sqrt(l2);
@@ -206,7 +206,7 @@ public:
   template <typename R> double dotprod(const Hamvec<dim, R> &v) const {
     double tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      tmp += static_cast<double>(this->ele[i]) * static_cast<double>(v[i]);
+      tmp += static_cast<double>(this->Ele[i]) * static_cast<double>(v[i]);
     }
     return tmp;
   }
@@ -217,9 +217,9 @@ public:
     assert(dim == 3);
     Hamvec<dim, double> tmp;
     for (unsigned int i = 0; i < dim; ++i) {
-      tmp[i] = (static_cast<double>(this->ele[(i + 1) % 3]) *
+      tmp[i] = (static_cast<double>(this->Ele[(i + 1) % 3]) *
                     static_cast<double>(v[(i + 2) % 3]) -
-                static_cast<double>(this->ele[(i + 2) % 3]) *
+                static_cast<double>(this->Ele[(i + 2) % 3]) *
                     static_cast<double>(v[(i + 1) % 3]));
     }
     return tmp;

@@ -15,10 +15,7 @@
 const double cgspi = 3.14159265358979;
 
 class Hampixp {
-public:
-#ifdef NDEBUG
 protected:
-#endif
   double Theta{0};
   double Phi{0};
   // normalize the angles so that 0<=theta<=pi and 0<=phi<2*pi
@@ -26,57 +23,75 @@ protected:
 
 public:
   Hampixp() = default;
-  // copy
-  Hampixp(const Hampixp &p) : Theta(p.Theta), Phi(p.Phi) {}
-  // copy
-  Hampixp &operator=(const Hampixp &p) noexcept {
-    Theta = p.theta();
-    Phi = p.phi();
+  // copy constr
+  Hampixp(const Hampixp &p) noexcept {
+    this->Theta = p.theta();
+    this->Phi = p.phi();
+  }
+  // copy assign
+  Hampixp& operator=(const Hampixp &p) noexcept {
+    this->Theta = p.theta();
+    this->Phi = p.phi();
+    return *this;
+  }
+  // move constr
+  Hampixp(Hampixp &&p) noexcept {
+    this->Theta = std::move(p.Theta);
+    this->Phi = std::move(p.Phi);
+  }
+  // move assign
+  Hampixp& operator=(Hampixp &p) noexcept {
+    this->Theta = std::move(p.Theta);
+    this->Phi = std::move(p.Phi);
     return *this;
   }
   // explicit
-  Hampixp(const double &t, const double &p) : Theta(t), Phi(p) { norm(); }
+  Hampixp(const double &t, const double &p) {
+    this->Theta = t;
+    this->Phi = p;
+    norm();
+  }
   // from Caretesian vector (not necessarily a versor)
   Hampixp(const Hamvec<3, double> &vec) {
     const double x{vec[0]};
     const double y{vec[1]};
     const double z{vec[2]};
-    Theta = std::fmod(std::atan2(sqrt(x * x + y * y), z), cgspi);
-    Theta += (Theta < 0) * cgspi;
-    Phi = std::fmod(std::atan2(y, x), 2. * cgspi);
-    Phi += (Phi < 0) * 2. * cgspi;
+    this->Theta = std::fmod(std::atan2(sqrt(x * x + y * y), z), cgspi);
+    this->Theta += (this->Theta < 0) * cgspi;
+    this->Phi = std::fmod(std::atan2(y, x), 2. * cgspi);
+    this->Phi += (this->Phi < 0) * 2. * cgspi;
   }
   ~Hampixp() = default;
 
-  // read theta value
+  // read in theta value
   void theta(const double &t) {
-    Theta = std::fmod(t, cgspi);
-    Theta += (Theta < 0) * cgspi;
+    this->Theta = std::fmod(t, cgspi);
+    this->Theta += (this->Theta < 0) * cgspi;
   }
-  // read phi value
+  // read in phi value
   void phi(const double &p) {
-    Phi = std::fmod(p, 2. * cgspi);
-    Phi += (Phi < 0) * 2. * cgspi;
+    this->Phi = std::fmod(p, 2. * cgspi);
+    this->Phi += (this->Phi < 0) * 2. * cgspi;
   }
   // return theta value
-  double theta() const { return Theta; }
+  double theta() const { return this->Theta; }
   // return phi value
-  double phi() const { return Phi; }
+  double phi() const { return this->Phi; }
   // return to Cartesian versor
   Hamvec<3, double> versor() const;
 };
 
 void Hampixp::norm() {
-  Theta = std::fmod(Theta, cgspi);
-  Theta += (Theta < 0) * cgspi;
-  Phi = std::fmod(Phi, 2. * cgspi);
-  Phi += (Phi < 0) * 2. * cgspi;
+  this->Theta = std::fmod(this->Theta, cgspi);
+  this->Theta += (this->Theta < 0) * cgspi;
+  this->Phi = std::fmod(this->Phi, 2. * cgspi);
+  this->Phi += (this->Phi < 0) * 2. * cgspi;
 }
 
 Hamvec<3, double> Hampixp::versor() const {
-  const double sth{std::sin(Theta)};
-  return Hamvec<3, double>{sth * std::cos(Phi), sth * std::sin(Phi),
-                           std::cos(Theta)};
+  const double sth{std::sin(this->Theta)};
+  return Hamvec<3, double>{sth * std::cos(this->Phi), sth * std::sin(this->Phi),
+                           std::cos(this->Theta)};
 }
 
 #endif
