@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef> // for std::size_t
 #include <memory>
 #include <hampixp.h>
 #include <hampix.h>
@@ -14,6 +15,7 @@ TEST(node, basic) {
   EXPECT_EQ(node_dft.data(), double(0));
   EXPECT_EQ(node_dft.pointing().theta(), double(0));
   EXPECT_EQ(node_dft.pointing().phi(), double(0));
+  EXPECT_EQ(node_dft.index(), std::size_t(0));
   
   // update data
   node_dft.data(0.2);
@@ -24,6 +26,11 @@ TEST(node, basic) {
   node_dft.pointing(new_point);
   EXPECT_NEAR(node_dft.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_dft.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
+  EXPECT_EQ(node_dft.index(), std::size_t(0));
+  
+  // update index
+  node_dft.index(233);
+  EXPECT_EQ(node_dft.index(), std::size_t(233));
   
   // move
   Node<double> node_mvconstr(std::move(node_dft));
@@ -31,6 +38,7 @@ TEST(node, basic) {
   node_mvassign = std::move(node_mvconstr);
   EXPECT_NEAR(node_mvassign.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_mvassign.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
+  EXPECT_EQ(node_mvassign.index(), std::size_t(233));
   
   // copy
   Node<double> node_cpconstr(node_mvassign);
@@ -38,4 +46,5 @@ TEST(node, basic) {
   node_cpassign = node_cpconstr;
   EXPECT_NEAR(node_cpassign.pointing().theta(), double(0.2*cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_cpassign.pointing().phi(), double(0.1*cgs_pi), 1.0e-10);
+  EXPECT_EQ(node_cpassign.index(), std::size_t(233));
 }

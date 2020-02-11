@@ -1,6 +1,7 @@
 #ifndef HAMMURABI_PIX_H
 #define HAMMURABI_PIX_H
 
+#include <cstddef> // for std::size_t
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -18,47 +19,58 @@ protected:
   Hampixp Pointing;
   // pixel data
   T Data {static_cast<T>(0)};
+  // pixel index
+  std::size_t Index=0;
   
 public:
   // constructor
   Node() = default;
   // direct constr
-  Node(const Hampixp &ptr, const T &val) {
+  Node(const Hampixp &ptr, const T &val, const std::size_t &idx=0) {
     this->Pointing = ptr;
     this->Data = val;
+    this->Index = idx;
   }
   // copy assign
   Node& operator=(const Node<T> &n) noexcept {
     this->Pointing = n.Pointing;
     this->Data = n.Data;
+    this->Index = n.Index;
     return *this;
   }
   // move assign
   Node& operator=(Node<T> &&n) noexcept {
     this->Pointing = std::move(n.Pointing);
     this->Data = std::move(n.Data);
+    this->Index = std::move(n.Index);
     return *this;
   }
   // copy constr
   Node(const Node<T> &n) noexcept {
     this->Pointing = n.Pointing;
     this->Data = n.Data;
+    this->Index = n.Index;
   }
   // move constr
   Node(Node<T> &&n) noexcept {
     this->Pointing = std::move(n.Pointing);
     this->Data = std::move(n.Data);
+    this->Index = std::move(n.Index);
   }
   // destr
   virtual ~Node() = default;
   
   // extract sky position
-  virtual Hampixp pointing() const{
+  virtual Hampixp pointing() const {
     return this->Pointing;
   }
   // extract sky information
-  virtual T data() const{
-    return Data;
+  virtual T data() const {
+    return this->Data;
+  }
+  // extract sky index
+  virtual std::size_t index() const {
+    return this->Index;
   }
   // update sky position
   virtual void pointing(const Hampixp& new_pointing) {
@@ -68,7 +80,12 @@ public:
   virtual void data(const T& new_data) {
     this->Data = new_data;
   }
+  // update ksy index
+  virtual void index(const std::size_t& new_idx) {
+    this->Index = new_idx;
+  }
 };
+
 /*
 // data type T
 // hosts a list sampling points
