@@ -69,7 +69,6 @@ TEST(Hampix, basic) {
 
 TEST(Healmpix, basic) {
   // init
-
   Healmpix<double> map_dft;
   EXPECT_EQ(map_dft.npix(), 0);
 
@@ -189,5 +188,55 @@ TEST(Healmpix, basic) {
       EXPECT_NEAR(map_npower5.pointing(i).phi(), tmp, 1.0e-10);
     }
     infile5.close();
+  }
+}
+
+TEST(Healmpix, reset) {
+  // reset from empty constr
+  Healmpix<double> map_dft;
+  map_dft.reset(2);
+  EXPECT_EQ(map_dft.nside(), 2);
+  EXPECT_EQ(map_dft.npix(), 48);
+  std::fstream infile1("reference/pointing_healpix_npower1.bin",
+                       std::ios::in | std::ios::binary);
+  if (infile1.is_open()) {
+    for (std::size_t i = 0; i != map_dft.npix(); ++i) {
+      double tmp;
+      // theta
+      infile1.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      EXPECT_NEAR(map_dft.pointing(i).theta(), tmp, 1.0e-10);
+      // phi
+      infile1.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      EXPECT_NEAR(map_dft.pointing(i).phi(), tmp, 1.0e-10);
+    }
+    infile1.close();
+  }
+
+  // reset with new Nside
+  map_dft.reset(4);
+  EXPECT_EQ(map_dft.nside(), 4);
+  EXPECT_EQ(map_dft.npix(), 192);
+  std::fstream infile2("reference/pointing_healpix_npower2.bin",
+                       std::ios::in | std::ios::binary);
+  if (infile2.is_open()) {
+    for (std::size_t i = 0; i != map_dft.npix(); ++i) {
+      double tmp;
+      // theta
+      infile2.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      EXPECT_NEAR(map_dft.pointing(i).theta(), tmp, 1.0e-10);
+      // phi
+      infile2.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      EXPECT_NEAR(map_dft.pointing(i).phi(), tmp, 1.0e-10);
+    }
+    infile2.close();
+  }
+
+  // reset data to zero
+  map_dft.data(2, 1.0);
+  map_dft.reset();
+  EXPECT_EQ(map_dft.nside(), 4);
+  EXPECT_EQ(map_dft.npix(), 192);
+  for (std::size_t i = 0; i < 192; ++i) {
+    EXPECT_EQ(map_dft.data(i), double(0));
   }
 }

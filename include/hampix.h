@@ -177,7 +177,7 @@ protected:
   double Fact2 = 0.0;
   // initialize constants
   // copied from healpix_base.cc SetNside function
-  void pprepare() {
+  void prepare() {
     // order_
     this->Order = this->ilog2(this->Nside);
     // check order_
@@ -194,9 +194,40 @@ protected:
     // fact1
     this->Fact1 = (this->Nside << 1) * this->Fact2;
   }
+  // copied from HEALPix cxxutils.h ilog2 function
+  // Returns the largest integer n that fulfills 2^n<=arg.
+  inline unsigned int ilog2(const std::size_t &n) {
+    std::size_t tmp = n;
+    unsigned int res = 0;
+    while (tmp > 0x0000FFFF) {
+      res += 16;
+      tmp >>= 16;
+    }
+    if (tmp > 0x000000FF) {
+      res |= 8;
+      tmp >>= 8;
+    }
+    if (tmp > 0x0000000F) {
+      res |= 4;
+      tmp >>= 4;
+    }
+    if (tmp > 0x00000003) {
+      res |= 2;
+      tmp >>= 2;
+    }
+    if (tmp > 0x00000001) {
+      res |= 1;
+    }
+    return res;
+  }
+  // copied from HEALPix cxxutils.h isqrt function
+  // Returns the integer n, which fulfills n*n<=arg<(n+1)*(n+1).
+  inline unsigned int isqrt(const std::size_t &n) {
+    return unsigned(std::sqrt(static_cast<long double>(n) + 0.5));
+  }
   // assigning correct pointing position
   // using HEALPix implementation, equivalent to HEALPix pix2ang function
-  Hampixp passign(const std::size_t &idx) {
+  Hampixp fillpoint(const std::size_t &idx) {
     double z = 0.0;
     double phi = 0.0;
     double sth = 0.0;
@@ -253,41 +284,6 @@ protected:
                     : Hampixp(std::acos(z), phi);
   }
 
-#ifndef NDEBUG
-public:
-#endif
-  // copied from HEALPix cxxutils.h ilog2 function
-  // Returns the largest integer n that fulfills 2^n<=arg.
-  inline unsigned int ilog2(const std::size_t &n) {
-    std::size_t tmp = n;
-    unsigned int res = 0;
-    while (tmp > 0x0000FFFF) {
-      res += 16;
-      tmp >>= 16;
-    }
-    if (tmp > 0x000000FF) {
-      res |= 8;
-      tmp >>= 8;
-    }
-    if (tmp > 0x0000000F) {
-      res |= 4;
-      tmp >>= 4;
-    }
-    if (tmp > 0x00000003) {
-      res |= 2;
-      tmp >>= 2;
-    }
-    if (tmp > 0x00000001) {
-      res |= 1;
-    }
-    return res;
-  }
-  // copied from HEALPix cxxutils.h isqrt function
-  // Returns the integer n, which fulfills n*n<=arg<(n+1)*(n+1).
-  inline unsigned int isqrt(const std::size_t &n) {
-    return unsigned(std::sqrt(static_cast<long double>(n) + 0.5));
-  }
-
 public:
   // dft constr
   Healmpix() : Hampix<T>() {}
@@ -296,7 +292,7 @@ public:
   // Node's Index assigned from 0 to N-1
   Healmpix(const std::size_t &n, const T &v = static_cast<T>(0)) : Hampix<T>() {
     this->Nside = n;
-    this->pprepare();
+    this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
         static_cast<const std::size_t>(this->Npix));
 #ifdef _OPENMP
@@ -304,7 +300,7 @@ public:
 #endif
     for (std::size_t i = 0; i < this->Npix; ++i) {
       this->Map->at(i).index(i);
-      this->Map->at(i).pointing(this->passign(i));
+      this->Map->at(i).pointing(this->fillpoint(i));
       this->Map->at(i).data(v);
     }
   }
@@ -317,7 +313,6 @@ public:
     this->Ncap = m.Ncap;
     this->Fact1 = m.Fact1;
     this->Fact2 = m.Fact2;
-    // this->Map.reset(new std::vector<Node<T>>(*(m.Map.get())));
   }
   // move constr
   Healmpix(Healmpix<T> &&m) : Hampix<T>(std::move(m)) {
@@ -328,7 +323,6 @@ public:
     this->Ncap = std::move(m.Ncap);
     this->Fact1 = std::move(m.Fact1);
     this->Fact2 = std::move(m.Fact2);
-    // this->Map = std::move(m.Map);
   }
   // move assign
   Healmpix &operator=(Healmpix<T> &&m) noexcept {
@@ -340,7 +334,6 @@ public:
     this->Ncap = std::move(m.Ncap);
     this->Fact1 = std::move(m.Fact1);
     this->Fact2 = std::move(m.Fact2);
-    // this->Map = std::move(m.Map);
     return *this;
   }
   // copy assignment
@@ -353,7 +346,6 @@ public:
     this->Ncap = m.Ncap;
     this->Fact1 = m.Fact1;
     this->Fact2 = m.Fact2;
-    // this->Map.reset(new std::vector<Node<T>>(*(m.Map.get())));
     return *this;
   }
   // dft destr
@@ -364,6 +356,34 @@ public:
   std::size_t npix() const override {
     assert(this->Npix == this->Map->size());
     return this->Npix;
+  }
+  // reset with given nside and clean up data
+  virtual void reset(const std::size_t &n = 0) {
+    // cleaning an used map with correct size
+    if (n == 0 or this->Nside == n) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < this->Npix; ++i) {
+        this->Map->at(i).data(0.0);
+      }
+    } else {
+      // there 2 cases when Nside != n
+      // 1, map to be recycled with wrong size
+      // 2, empty map initialized by the default constr
+      this->Nside = n;
+      this->prepare();
+      this->Map = std::make_unique<std::vector<Node<T>>>(
+          static_cast<const std::size_t>(this->Npix));
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < this->Npix; ++i) {
+        this->Map->at(i).index(i);
+        this->Map->at(i).pointing(this->fillpoint(i));
+        this->Map->at(i).data(0.0);
+      }
+    }
   }
 };
 
