@@ -33,7 +33,7 @@ TEST(vector, basic) {
   Hamvec<1, float> vec1_mva(0.2);
   vec1 = std::move(vec1_mva);
   EXPECT_EQ(vec1[0], float(0.2));
-  
+
   // cp assign, operator=
   Hamvec<1, float> vec1_cpa(0.2);
   vec1 = vec1_cpa;

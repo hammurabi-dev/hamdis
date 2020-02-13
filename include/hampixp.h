@@ -29,7 +29,7 @@ public:
     this->Phi = p.phi();
   }
   // copy assign
-  Hampixp& operator=(const Hampixp &p) noexcept {
+  Hampixp &operator=(const Hampixp &p) noexcept {
     this->Theta = p.theta();
     this->Phi = p.phi();
     return *this;
@@ -40,7 +40,7 @@ public:
     this->Phi = std::move(p.Phi);
   }
   // move assign
-  Hampixp& operator=(Hampixp &&p) noexcept {
+  Hampixp &operator=(Hampixp &&p) noexcept {
     this->Theta = std::move(p.Theta);
     this->Phi = std::move(p.Phi);
     return *this;

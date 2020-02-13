@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+ # misc
+/.clang_complete
+/contrib/utilities/programs

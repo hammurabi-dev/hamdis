@@ -36,7 +36,7 @@ TEST(Hampixp, basic) {
   ptr4 = ptr3;
   EXPECT_EQ(ptr4.theta(), double(0.3));
   EXPECT_EQ(ptr4.phi(), double(0.4));
-  
+
   // move
   Hampixp ptr5(std::move(ptr2));
   EXPECT_EQ(ptr5.theta(), double(0.1));

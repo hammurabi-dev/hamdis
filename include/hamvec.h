@@ -56,12 +56,12 @@ public:
   // move ctor
   Hamvec<dim, T>(Hamvec<dim, T> &&v) { this->Ele = std::move(v.Ele); }
   // copy assign
-  Hamvec<dim, T>& operator=(const Hamvec<dim, T> &v) noexcept {
+  Hamvec<dim, T> &operator=(const Hamvec<dim, T> &v) noexcept {
     this->Ele = std::move(v.Ele);
     return *this;
   }
   // move assign
-  Hamvec<dim, T>& operator=(Hamvec<dim, T> &&v) noexcept {
+  Hamvec<dim, T> &operator=(Hamvec<dim, T> &&v) noexcept {
     this->Ele = std::move(v.Ele);
     return *this;
   }
