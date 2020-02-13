@@ -67,6 +67,38 @@ TEST(Hampix, basic) {
   map_print.print();
 }
 
+TEST(Hampix, reset) {
+  // reset from empty constr
+  Hampix<double> map_dft;
+  map_dft.reset(2);
+  EXPECT_EQ(map_dft.npix(), 2);
+  for (std::size_t i = 0; i < 2; ++i) {
+    EXPECT_EQ(map_dft.index(i), i);
+    EXPECT_EQ(map_dft.data(i), double(0.0));
+    EXPECT_EQ(map_dft.pointing(i).phi(), double(0.0));
+    EXPECT_EQ(map_dft.pointing(i).theta(), double(0.0));
+  }
+  
+  // reset with new Nside
+  map_dft.reset(4);
+  EXPECT_EQ(map_dft.npix(), 4);
+  for (std::size_t i = 0; i < 4; ++i) {
+    EXPECT_EQ(map_dft.index(i), i);
+    EXPECT_EQ(map_dft.data(i), double(0.0));
+    EXPECT_EQ(map_dft.pointing(i).phi(), double(0.0));
+    EXPECT_EQ(map_dft.pointing(i).theta(), double(0.0));
+  }
+  
+  // reset data to zero
+  map_dft.data(2, 1.0);
+  map_dft.reset();
+  EXPECT_EQ(map_dft.npix(), 4);
+  for (std::size_t i = 0; i < 4; ++i) {
+    EXPECT_EQ(map_dft.data(i), double(0));
+  }
+}
+
+
 TEST(Healmpix, basic) {
   // init
   Healmpix<double> map_dft;

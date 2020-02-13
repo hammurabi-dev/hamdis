@@ -18,11 +18,11 @@ const double halfpi = 1.57079632679490;
 template <typename T> class Node {
 protected:
   // pointing
-  Hampixp Pointing;
+  Hampixp Pointing{0.0,0.0};
   // pixel data
   T Data{static_cast<T>(0)};
   // pixel index
-  std::size_t Index = 0;
+  std::size_t Index{0};
 
 public:
   // constructor
@@ -154,6 +154,31 @@ public:
                 << "data: " << i->data() << "\t"
                 << "pointing: theta " << i->pointing().theta() << " phi "
                 << i->pointing().phi() << std::endl;
+    }
+  }
+  // reset with given nside and clean up data
+  virtual void reset(const std::size_t &n = 0) {
+    // cleaning an used map with correct size
+    if (n == 0 or this->Map->size() == n) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < this->Map->size(); ++i) {
+        this->Map->at(i).data(0.0);
+      }
+    } else {
+      // there 2 cases when Nside != n
+      // 1, map to be recycled with wrong size
+      // 2, empty map initialized by the default constr
+      this->Map = std::make_unique<std::vector<Node<T>>>((n));
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < n; ++i) {
+        this->Map->at(i).index(i);
+        this->Map->at(i).pointing(Hampixp(0.0,0.0));
+        this->Map->at(i).data(0.0);
+      }
     }
   }
 };
@@ -358,7 +383,7 @@ public:
     return this->Npix;
   }
   // reset with given nside and clean up data
-  virtual void reset(const std::size_t &n = 0) {
+  void reset(const std::size_t &n = 0) override {
     // cleaning an used map with correct size
     if (n == 0 or this->Nside == n) {
 #ifdef _OPENMP
