@@ -1,8 +1,7 @@
 // unit tests for Node class
 
-#include <gtest/gtest.h>
-
 #include <cstddef> // for std::size_t
+#include <gtest/gtest.h>
 #include <hampix.h>
 #include <hampixp.h>
 #include <memory>

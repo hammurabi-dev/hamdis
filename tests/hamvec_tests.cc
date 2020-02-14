@@ -1,8 +1,7 @@
 // unit tests for Hamvec class
 
-#include <gtest/gtest.h>
-
 #include <cmath>
+#include <gtest/gtest.h>
 #include <hamvec.h>
 #include <iostream>
 #include <memory>

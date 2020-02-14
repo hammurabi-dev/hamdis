@@ -18,7 +18,7 @@ const double halfpi = 1.57079632679490;
 template <typename T> class Node {
 protected:
   // pointing
-  Hampixp Pointing{0.0,0.0};
+  Hampixp Pointing{0.0, 0.0};
   // pixel data
   T Data{static_cast<T>(0)};
   // pixel index
@@ -86,6 +86,8 @@ protected:
   std::unique_ptr<std::vector<Node<T>>> Map;
 
 public:
+  // HEALPix underfined value for masking
+  const double undef{-1.6375e30};
   // dft constr
   Hampix() { this->Map = std::make_unique<std::vector<Node<T>>>(); }
   // initialize map with given sample number N
@@ -176,9 +178,22 @@ public:
 #endif
       for (std::size_t i = 0; i < n; ++i) {
         this->Map->at(i).index(i);
-        this->Map->at(i).pointing(Hampixp(0.0,0.0));
+        this->Map->at(i).pointing(Hampixp(0.0, 0.0));
         this->Map->at(i).data(0.0);
       }
+    }
+  }
+  // undefine a certain Node
+  virtual void undefine(const std::size_t &idx) {
+    this->Map->at(idx).data(this->undef);
+  }
+  // undefine a list of Nodes
+  virtual void undefine(const std::vector<std::size_t> *list) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (std::size_t i = 0; i < list->size(); ++i) {
+      this->Map->at(list->at(i)).data(this->undef);
     }
   }
 };

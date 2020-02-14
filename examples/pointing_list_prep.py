@@ -1,14 +1,13 @@
 import healpy as hp
 import numpy as np
 
+
 DATATYPE = np.float64  # hampix convention
 
-"""
-preparing HEALPix full-sky pointing lists
-"""
 
 def healpix_fullsky_plist(poweridx):
 	"""
+	preparing HEALPix full-sky pointing lists
 	write out binary pointing lists (in C ordering) to disk
 
 	Parameters
@@ -23,9 +22,6 @@ def healpix_fullsky_plist(poweridx):
 		x[i] = hp.pix2ang(nside,i)
 	x.tofile('pointing_healpix_npower'+str(poweridx)+'.bin')
 
-"""
-
-"""
 
 if __name__ == "__main__":
 	healpix_fullsky_plist(1)

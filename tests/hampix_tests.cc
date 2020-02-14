@@ -6,8 +6,8 @@
 #include <gtest/gtest.h>
 #include <hampix.h>
 #include <hampixp.h>
-#include <iostream>
 #include <memory>
+#include <vector>
 
 const double cgs_pi = 3.14159265358979;
 
@@ -78,7 +78,7 @@ TEST(Hampix, reset) {
     EXPECT_EQ(map_dft.pointing(i).phi(), double(0.0));
     EXPECT_EQ(map_dft.pointing(i).theta(), double(0.0));
   }
-  
+
   // reset with new Nside
   map_dft.reset(4);
   EXPECT_EQ(map_dft.npix(), 4);
@@ -88,7 +88,7 @@ TEST(Hampix, reset) {
     EXPECT_EQ(map_dft.pointing(i).phi(), double(0.0));
     EXPECT_EQ(map_dft.pointing(i).theta(), double(0.0));
   }
-  
+
   // reset data to zero
   map_dft.data(2, 1.0);
   map_dft.reset();
@@ -98,6 +98,17 @@ TEST(Hampix, reset) {
   }
 }
 
+TEST(Hampix, undef) {
+  Hampix<double> map_dft(2);
+  map_dft.undefine(1);
+  EXPECT_EQ(map_dft.data(0), double(0));
+  EXPECT_EQ(map_dft.data(1), map_dft.undef);
+
+  std::vector<std::size_t> list{0, 1};
+  map_dft.undefine(&list);
+  EXPECT_EQ(map_dft.data(0), map_dft.undef);
+  EXPECT_EQ(map_dft.data(1), map_dft.undef);
+}
 
 TEST(Healmpix, basic) {
   // init
@@ -271,4 +282,16 @@ TEST(Healmpix, reset) {
   for (std::size_t i = 0; i < 192; ++i) {
     EXPECT_EQ(map_dft.data(i), double(0));
   }
+}
+
+TEST(Healmpix, undef) {
+  Healmpix<double> map_dft(2);
+  map_dft.undefine(1);
+  EXPECT_EQ(map_dft.data(1), map_dft.undef);
+
+  std::vector<std::size_t> list{0, 5};
+  map_dft.undefine(&list);
+  EXPECT_EQ(map_dft.data(0), map_dft.undef);
+  EXPECT_EQ(map_dft.data(1), map_dft.undef);
+  EXPECT_EQ(map_dft.data(5), map_dft.undef);
 }
