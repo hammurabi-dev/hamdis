@@ -105,7 +105,7 @@ TEST(Hampix, undef) {
   EXPECT_EQ(map_dft.data(1), map_dft.undef);
 
   std::vector<std::size_t> list{0, 1};
-  map_dft.undefine(&list);
+  map_dft.undefine(list);
   EXPECT_EQ(map_dft.data(0), map_dft.undef);
   EXPECT_EQ(map_dft.data(1), map_dft.undef);
 }
@@ -290,7 +290,7 @@ TEST(Healmpix, undef) {
   EXPECT_EQ(map_dft.data(1), map_dft.undef);
 
   std::vector<std::size_t> list{0, 5};
-  map_dft.undefine(&list);
+  map_dft.undefine(list);
   EXPECT_EQ(map_dft.data(0), map_dft.undef);
   EXPECT_EQ(map_dft.data(1), map_dft.undef);
   EXPECT_EQ(map_dft.data(5), map_dft.undef);
@@ -300,21 +300,73 @@ TEST(Healmpix, accumulate) {
   // equal resolution
   Healmpix<double> map_dft(4);
   Healmpix<double> map_add(4, 1.0);
-  map_dft.accumulate(&map_add);
+  map_dft.accumulate(map_add);
   for (std::size_t i = 0; i < 192; ++i) {
     EXPECT_EQ(map_dft.data(i), double(1.0));
   }
 
   // different resolution
   Healmpix<double> map_addlower(2, 2.0);
-  map_dft.accumulate(&map_addlower);
+  map_dft.accumulate(map_addlower);
   for (std::size_t i = 0; i < 192; ++i) {
     EXPECT_EQ(map_dft.data(i), double(3.0));
   }
 
   Healmpix<double> map_addhigher(8, 2.0);
-  map_dft.accumulate(&map_addhigher);
+  map_dft.accumulate(map_addhigher);
   for (std::size_t i = 0; i < 192; ++i) {
     EXPECT_EQ(map_dft.data(i), double(5.0));
+  }
+}
+
+TEST(Healmpix, interpolation) {
+  // import reference
+  std::size_t base_npix = 192; // nside 4
+  std::size_t high_npix = 768; // nside 8
+  std::size_t low_npix = 48;   // nside 2
+  std::vector<double> base_input, high_input, low_input;
+  std::fstream base_file("reference/random_map_nside4.bin",
+                         std::ios::in | std::ios::binary);
+  if (base_file.is_open()) {
+    for (std::size_t i = 0; i != base_npix; ++i) {
+      double tmp;
+      base_file.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      base_input.push_back(tmp);
+    }
+    base_file.close();
+  }
+  Healmpix<double> base_map(4, base_input);
+  std::fstream low_file("reference/random_map_nside2.bin",
+                        std::ios::in | std::ios::binary);
+  if (low_file.is_open()) {
+    for (std::size_t i = 0; i != low_npix; ++i) {
+      double tmp;
+      low_file.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      low_input.push_back(tmp);
+    }
+    low_file.close();
+  }
+  Healmpix<double> low_map(2, low_input);
+  std::fstream high_file("reference/random_map_nside8.bin",
+                         std::ios::in | std::ios::binary);
+  if (high_file.is_open()) {
+    for (std::size_t i = 0; i != high_npix; ++i) {
+      double tmp;
+      high_file.read(reinterpret_cast<char *>(&tmp), sizeof(double));
+      high_input.push_back(tmp);
+    }
+    high_file.close();
+  }
+  Healmpix<double> high_map(8, high_input);
+  // test interpolation
+  Healmpix<double> low_test(2);
+  low_test.accumulate(base_map);
+  Healmpix<double> high_test(8);
+  high_test.accumulate(base_map);
+  for (std::size_t i = 0; i < low_npix; ++i) {
+    EXPECT_NEAR(low_test.data(i), low_map.data(i), 1.0e-10);
+  }
+  for (std::size_t i = 0; i < high_npix; ++i) {
+    EXPECT_NEAR(high_test.data(i), high_map.data(i), 1.0e-10);
   }
 }

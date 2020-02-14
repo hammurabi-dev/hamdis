@@ -187,12 +187,12 @@ public:
     this->Map->at(idx).data(this->undef);
   }
   // undefine a list of Nodes
-  virtual void undefine(const std::vector<std::size_t> *list) {
+  virtual void undefine(const std::vector<std::size_t> &list) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (std::size_t i = 0; i < list->size(); ++i) {
-      this->Map->at(list->at(i)).data(this->undef);
+    for (std::size_t i = 0; i < list.size(); ++i) {
+      this->Map->at(list[i]).data(this->undef);
     }
   }
 };
@@ -472,6 +472,20 @@ public:
       this->Map->at(i).data(v);
     }
   }
+  Healmpix(const std::size_t &n, const std::vector<T> &v) : Hampix<T>() {
+    this->Nside = n;
+    this->prepare();
+    this->Map = std::make_unique<std::vector<Node<T>>>(
+        static_cast<const std::size_t>(this->Npix));
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (std::size_t i = 0; i < this->Npix; ++i) {
+      this->Map->at(i).index(i);
+      this->Map->at(i).pointing(this->fillpoint(i));
+      this->Map->at(i).data(v[i]);
+    }
+  }
   // copy constr
   Healmpix(const Healmpix<T> &m) : Hampix<T>(m) {
     this->Nside = m.Nside;
@@ -554,15 +568,15 @@ public:
     }
   }
   // add maps
-  void accumulate(const Healmpix<T> *m) {
+  void accumulate(const Healmpix<T> &m) {
     // in same Nside
-    if (this->Npix == m->npix()) {
+    if (this->Npix == m.npix()) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
       for (std::size_t i = 0; i < this->Npix; ++i) {
-        T cache = this->Map->at(i).data();
-        this->Map->at(i).data(cache + m->data(i));
+        const T cache = this->Map->at(i).data();
+        this->Map->at(i).data(cache + m.data(i));
       }
     }
     // in different Nside
@@ -572,9 +586,9 @@ public:
 #pragma omp parallel for
 #endif
       for (std::size_t i = 0; i < this->Npix; ++i) {
-        T cache = this->Map->at(i).data();
+        const T cache = this->Map->at(i).data();
         this->Map->at(i).data(cache +
-                              m->interpolate(this->Map->at(i).pointing()));
+                              m.interpolate(this->Map->at(i).pointing()));
       }
     }
   }
