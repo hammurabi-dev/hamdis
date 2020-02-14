@@ -295,3 +295,26 @@ TEST(Healmpix, undef) {
   EXPECT_EQ(map_dft.data(1), map_dft.undef);
   EXPECT_EQ(map_dft.data(5), map_dft.undef);
 }
+
+TEST(Healmpix, accumulate) {
+  // equal resolution
+  Healmpix<double> map_dft(4);
+  Healmpix<double> map_add(4, 1.0);
+  map_dft.accumulate(&map_add);
+  for (std::size_t i = 0; i < 192; ++i) {
+    EXPECT_EQ(map_dft.data(i), double(1.0));
+  }
+
+  // different resolution
+  Healmpix<double> map_addlower(2, 2.0);
+  map_dft.accumulate(&map_addlower);
+  for (std::size_t i = 0; i < 192; ++i) {
+    EXPECT_EQ(map_dft.data(i), double(3.0));
+  }
+
+  Healmpix<double> map_addhigher(8, 2.0);
+  map_dft.accumulate(&map_addhigher);
+  for (std::size_t i = 0; i < 192; ++i) {
+    EXPECT_EQ(map_dft.data(i), double(5.0));
+  }
+}

@@ -1,6 +1,7 @@
 #ifndef HAMMURABI_PIX_H
 #define HAMMURABI_PIX_H
 
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef> // for std::size_t
@@ -10,8 +11,6 @@
 #include <omp.h>
 #include <stdexcept>
 #include <vector>
-
-const double halfpi = 1.57079632679490;
 
 // data type T
 // key structure of each sample point
@@ -237,8 +236,8 @@ protected:
   // copied from HEALPix cxxutils.h ilog2 function
   // Returns the largest integer n that fulfills 2^n<=arg.
   inline unsigned int ilog2(const std::size_t &n) {
-    std::size_t tmp = n;
-    unsigned int res = 0;
+    std::size_t tmp{n};
+    unsigned int res{0};
     while (tmp > 0x0000FFFF) {
       res += 16;
       tmp >>= 16;
@@ -262,66 +261,195 @@ protected:
   }
   // copied from HEALPix cxxutils.h isqrt function
   // Returns the integer n, which fulfills n*n<=arg<(n+1)*(n+1).
-  inline unsigned int isqrt(const std::size_t &n) {
-    return unsigned(std::sqrt(static_cast<long double>(n) + 0.5));
+  inline std::size_t isqrt(const std::size_t &n) {
+    return static_cast<std::size_t>(
+        std::floor(std::sqrt(static_cast<double>(n) + 0.5)));
   }
   // assigning correct pointing position
   // using HEALPix implementation, equivalent to HEALPix pix2ang function
   Hampixp fillpoint(const std::size_t &idx) {
-    double z = 0.0;
-    double phi = 0.0;
-    double sth = 0.0;
-    bool have_sth = false;
+    double z{0.0};
+    double phi{0.0};
+    double sth{0.0};
+    bool have_sth{false};
     // healpix RING ordering
     // copied from HEALPix healpix_base.cc pix2loc function
     // counted from North pole
     // North Polar cap
     if (idx < this->Ncap) {
-      const std::size_t iring =
-          (1 + static_cast<std::size_t>(this->isqrt(1 + 2 * idx))) >> 1;
-      const std::size_t iphi = (idx + 1) - 2 * iring * (iring - 1);
-      const double tmp = (iring * iring) * this->Fact2;
+      const std::size_t iring{
+          (1 + static_cast<std::size_t>(this->isqrt(1 + 2 * idx))) >> 1};
+      const std::size_t iphi{(idx + 1) - 2 * iring * (iring - 1)};
+      const double tmp{(iring * iring) * this->Fact2};
       z = 1.0 - tmp;
       if (z > 0.99) {
         sth = std::sqrt(tmp * (2.0 - tmp));
         have_sth = true;
       }
-      phi = (iphi - 0.5) * halfpi / iring;
+      phi = (iphi - 0.5) * 1.570796326794896619231321691639751442099 / iring;
     }
     // Equatorial region
     else if (idx < (this->Npix - this->Ncap)) {
-      const std::size_t nl4 = 4 * this->Nside;
-      const std::size_t ip = idx - this->Ncap;
-      const std::size_t tmp =
-          (this->Order >= 0) ? ip >> (this->Order + 2) : ip / nl4;
-      const std::size_t iring = tmp + this->Nside;
-      const std::size_t iphi = ip - nl4 * tmp + 1;
+      const std::size_t nl4{4 * this->Nside};
+      const std::size_t ip{idx - this->Ncap};
+      const std::size_t tmp{(this->Order >= 0) ? ip >> (this->Order + 2)
+                                               : ip / nl4};
+      const std::size_t iring{tmp + this->Nside};
+      const std::size_t iphi{ip - nl4 * tmp + 1};
       // 1 if iring+nside is odd, 1/2 otherwise
-      const double fodd = ((iring + this->Nside) & 1) ? 1 : 0.5;
+      const double fodd{((iring + this->Nside) & 1) ? 1 : 0.5};
       // nside can be smaller than iring
-      z = (static_cast<long double>(2 * this->Nside) -
-           static_cast<long double>(iring)) *
+      z = (static_cast<double>(2 * this->Nside) - static_cast<double>(iring)) *
           this->Fact1;
-      phi = (iphi - fodd) * halfpi * 1.5 * this->Fact1;
+      phi = (iphi - fodd) * 1.570796326794896619231321691639751442099 * 1.5 *
+            this->Fact1;
     }
     // South Polar cap
     else {
-      const std::size_t ip = this->Npix - idx;
+      const std::size_t ip{this->Npix - idx};
       // counted from South pole
-      const std::size_t iring =
-          (1 + static_cast<std::size_t>(this->isqrt(2 * ip - 1))) >> 1;
-      const std::size_t iphi = 4 * iring + 1 - (ip - 2 * iring * (iring - 1));
-      const double tmp = (iring * iring) * this->Fact2;
+      const std::size_t iring{
+          (1 + static_cast<std::size_t>(this->isqrt(2 * ip - 1))) >> 1};
+      const std::size_t iphi{4 * iring + 1 - (ip - 2 * iring * (iring - 1))};
+      const double tmp{(iring * iring) * this->Fact2};
       z = tmp - 1.0;
       if (z < -0.99) {
         sth = std::sqrt(tmp * (2.0 - tmp));
         have_sth = true;
       }
-      phi = (iphi - 0.5) * halfpi / iring;
+      phi = (iphi - 0.5) * 1.570796326794896619231321691639751442099 / iring;
     }
     // copied from healpix_base.h pix2ang function
     return have_sth ? Hampixp(std::atan2(sth, z), phi)
                     : Hampixp(std::acos(z), phi);
+  }
+  // copied from HEALPix ring_above function
+  std::size_t rabove(const double &z) const {
+    double az{std::fabs(z)};
+    if (az <= 0.666666666666666666666666666666666666667) // equatorial region
+      return static_cast<std::size_t>(this->Nside * (2 - 1.5 * z));
+    const std::size_t iring{
+        static_cast<std::size_t>(this->Nside * std::sqrt(3 * (1 - az)))};
+    return (z > 0) ? iring : 4 * this->Nside - iring - 1;
+  }
+  // copied from HEALPix get_ring_info2 function
+  void rinfo(const std::size_t &ring, std::size_t &startpix, long int &ringpix,
+             double &theta, bool &shifted) const {
+    const std::size_t northring{
+        (ring > 2 * this->Nside) ? 4 * this->Nside - ring : ring};
+    if (northring < this->Nside) { // northring < Nside
+      const double tmp{northring * northring * this->Fact2};
+      const double costheta{1 - tmp};
+      const double sintheta{std::sqrt(tmp * (2 - tmp))};
+      theta = std::atan2(sintheta, costheta);
+      ringpix = 4 * northring;
+      shifted = true;
+      startpix = 2 * northring * (northring - 1);
+    } else { // northring >= Nside
+      theta = std::acos((static_cast<double>(2 * this->Nside) -
+                         static_cast<double>(northring)) *
+                        this->Fact1);
+      ringpix = 4 * this->Nside;
+      shifted = ((northring - this->Nside) & 1) == 0;
+      startpix = this->Ncap + (northring - this->Nside) * ringpix;
+    }
+    // southern hemisphere extra correction
+    if (northring != ring) {
+      theta = 3.141592653589793238462643383279502884197 - theta;
+      startpix = this->Npix - startpix - ringpix;
+    }
+  }
+  // interpolate map at given pointing position (linear interpolation with
+  // nearby 4 pixels) copied from HEALPix healpix_map.h interpolated_value
+  // functions
+  T interpolate(const Hampixp &point) const {
+    // calculate surrounding pixel indices and weights
+    // copied from HEALPix healpix_base.cc get_interpol function
+    std::array<std::size_t, 4> pix{};
+    std::array<double, 4> wght{};
+    const double z{std::cos(point.theta())};
+    const std::size_t ring1{rabove(z)};
+    const std::size_t ring2{ring1 + 1};
+    double theta1{0.0}, theta2{0.0};
+    // ring above and ring below
+    if (ring1 > 0) {
+      std::size_t start;
+      long int ringpix;
+      bool shift;
+      this->rinfo(ring1, start, ringpix, theta1, shift);
+      const double dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const double tmp{(point.phi() / dphi - 0.5 * shift)};
+      long int i1{static_cast<long int>(tmp) - static_cast<long int>(tmp < 0)};
+      const double weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      long int i2{i1 + 1};
+      i1 += ringpix * (i1 < 0);
+      i2 -= ringpix * (i2 >= ringpix);
+      pix[0] = start + i1;
+      pix[1] = start + i2;
+      wght[0] = 1.0 - weight;
+      wght[1] = weight;
+    }
+    if (ring2 < (4 * this->Nside)) {
+      std::size_t start;
+      long int ringpix;
+      bool shift;
+      this->rinfo(ring2, start, ringpix, theta2, shift);
+      const double dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const double tmp{(point.phi() / dphi - 0.5 * shift)};
+      long int i1{static_cast<long int>(tmp) - static_cast<long int>(tmp < 0)};
+      const double weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      long int i2{i1 + 1};
+      i1 += ringpix * (i1 < 0);
+      i2 -= ringpix * (i2 >= ringpix);
+      pix[2] = start + i1;
+      pix[3] = start + i2;
+      wght[2] = 1.0 - weight;
+      wght[3] = weight;
+    }
+    // special cases + post correction
+    if (ring1 == 0) {
+      const double wtheta{point.theta() / theta2};
+      wght[2] *= wtheta;
+      wght[3] *= wtheta;
+      const double fac{(1.0 - wtheta) * 0.25};
+      wght[0] = fac;
+      wght[1] = fac;
+      wght[2] += fac;
+      wght[3] += fac;
+      pix[0] = (pix[2] + 2) & 3;
+      pix[1] = (pix[3] + 2) & 3;
+    } else if (ring2 == (4 * this->Nside)) {
+      double wtheta{(point.theta() - theta1) /
+                    (3.141592653589793238462643383279502884197 - theta1)};
+      wght[0] *= (1.0 - wtheta);
+      wght[1] *= (1.0 - wtheta);
+      double fac{wtheta * 0.25};
+      wght[0] += fac;
+      wght[1] += fac;
+      wght[2] = fac;
+      wght[3] = fac;
+      pix[2] = ((pix[0] + 2) & 3) + this->Npix - 4;
+      pix[3] = ((pix[1] + 2) & 3) + this->Npix - 4;
+    } else {
+      double wtheta{(point.theta() - theta1) / (theta2 - theta1)};
+      wght[0] *= (1.0 - wtheta);
+      wght[1] *= (1.0 - wtheta);
+      wght[2] *= wtheta;
+      wght[3] *= wtheta;
+    }
+    // calculate interpolated result
+    // copied from HEALPix healpix_map.h interpolation function
+    double wtot{0.0};
+    T res{static_cast<T>(0)};
+    for (int i = 0; i < 4; ++i) {
+      T val{this->Map->at(pix[i]).data()};
+      if (val > -1.63749e30) { // larger than undef, exclude the masked
+        res += val * wght[i];
+        wtot += wght[i];
+      }
+    }
+    return (wtot == 0.0) ? static_cast<T>(this->undef)
+                         : static_cast<T>(res / wtot);
   }
 
 public:
@@ -422,6 +550,31 @@ public:
         this->Map->at(i).index(i);
         this->Map->at(i).pointing(this->fillpoint(i));
         this->Map->at(i).data(0.0);
+      }
+    }
+  }
+  // add maps
+  void accumulate(const Healmpix<T> *m) {
+    // in same Nside
+    if (this->Npix == m->npix()) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < this->Npix; ++i) {
+        T cache = this->Map->at(i).data();
+        this->Map->at(i).data(cache + m->data(i));
+      }
+    }
+    // in different Nside
+    // use interpolation
+    else {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (std::size_t i = 0; i < this->Npix; ++i) {
+        T cache = this->Map->at(i).data();
+        this->Map->at(i).data(cache +
+                              m->interpolate(this->Map->at(i).pointing()));
       }
     }
   }
