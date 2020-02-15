@@ -31,16 +31,16 @@ OPTION(ENABLE_REPORT "Enable verbose report" ON)
 #--------------------------------------------#
 IF(ON_DOCKER)
 	SET(GTEST_HINTS /usr/local)
-	SET(INSTALL_ROOT_DIR /usr/local/hampix)
+	SET(INSTALL_ROOT_DIR /usr/local/hamdis)
 ELSE()
 	MESSAGE("apply customized library paths")
 	SET(GTEST_HINTS $HOME/local/googletest)
 ENDIF()
-SET(INSTALL_ROOT_DIR $HOME/local/hampix)
+SET(INSTALL_ROOT_DIR $HOME/local/hamdis)
 SET(CMAKE_EXE_LINKER_FLAGS -lcurl)
 #---------------------------------------------#
 
-PROJECT(hampix CXX)
+PROJECT(hamdis CXX)
 
 # SETup cxx standard
 SET(CMAKE_CXX_STANDARD 14)
@@ -107,7 +107,7 @@ ENDIF()
 
 # assemble lib
 INCLUDE_DIRECTORIES(${ALL_INCLUDE_DIR})
-ADD_LIBRARY(hampix INTERFACE)
+ADD_LIBRARY(hamdis INTERFACE)
 
 # build testing cases
 IF(ENABLE_TESTING)

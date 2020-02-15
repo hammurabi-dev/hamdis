@@ -14,45 +14,45 @@
 
 const double cgspi = 3.14159265358979;
 
-class Hampixp {
+class Hamp {
 protected:
   double Theta{0};
   double Phi{0};
   // normalize the angles so that 0<=theta<=pi and 0<=phi<2*pi
   void norm();
-
+  
 public:
-  Hampixp() = default;
+  Hamp() = default;
   // copy constr
-  Hampixp(const Hampixp &p) noexcept {
+  Hamp(const Hamp &p) noexcept {
     this->Theta = p.theta();
     this->Phi = p.phi();
   }
   // copy assign
-  Hampixp &operator=(const Hampixp &p) noexcept {
+  Hamp &operator=(const Hamp &p) noexcept {
     this->Theta = p.theta();
     this->Phi = p.phi();
     return *this;
   }
   // move constr
-  Hampixp(Hampixp &&p) noexcept {
+  Hamp(Hamp &&p) noexcept {
     this->Theta = std::move(p.Theta);
     this->Phi = std::move(p.Phi);
   }
   // move assign
-  Hampixp &operator=(Hampixp &&p) noexcept {
+  Hamp &operator=(Hamp &&p) noexcept {
     this->Theta = std::move(p.Theta);
     this->Phi = std::move(p.Phi);
     return *this;
   }
   // explicit
-  Hampixp(const double &t, const double &p) {
+  Hamp(const double &t, const double &p) {
     this->Theta = t;
     this->Phi = p;
     norm();
   }
   // from Caretesian vector (not necessarily a versor)
-  Hampixp(const Hamvec<3, double> &vec) {
+  Hamp(const Hamvec<3, double> &vec) {
     const double x{vec[0]};
     const double y{vec[1]};
     const double z{vec[2]};
@@ -61,8 +61,8 @@ public:
     this->Phi = std::fmod(std::atan2(y, x), 2. * cgspi);
     this->Phi += (this->Phi < 0) * 2. * cgspi;
   }
-  ~Hampixp() = default;
-
+  ~Hamp() = default;
+  
   // read in theta value
   void theta(const double &t) {
     this->Theta = std::fmod(t, cgspi);
@@ -81,17 +81,17 @@ public:
   Hamvec<3, double> versor() const;
 };
 
-void Hampixp::norm() {
+void Hamp::norm() {
   this->Theta = std::fmod(this->Theta, cgspi);
   this->Theta += (this->Theta < 0) * cgspi;
   this->Phi = std::fmod(this->Phi, 2. * cgspi);
   this->Phi += (this->Phi < 0) * 2. * cgspi;
 }
 
-Hamvec<3, double> Hampixp::versor() const {
+Hamvec<3, double> Hamp::versor() const {
   const double sth{std::sin(this->Theta)};
   return Hamvec<3, double>{sth * std::cos(this->Phi), sth * std::sin(this->Phi),
-                           std::cos(this->Theta)};
+    std::cos(this->Theta)};
 }
 
 #endif

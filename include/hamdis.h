@@ -5,7 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef> // for std::size_t
-#include <hampixp.h>
+#include <hamp.h>
 #include <iostream>
 #include <memory>
 #include <omp.h>
@@ -17,7 +17,7 @@
 template <typename T> class Node {
 protected:
   // pointing
-  Hampixp Pointing{0.0, 0.0};
+  Hamp Pointing{0.0, 0.0};
   // pixel data
   T Data{static_cast<T>(0)};
   // pixel index
@@ -27,7 +27,7 @@ public:
   // constructor
   Node() = default;
   // direct constr
-  Node(const Hampixp &ptr, const T &val, const std::size_t &idx = 0) {
+  Node(const Hamp &ptr, const T &val, const std::size_t &idx = 0) {
     this->Pointing = ptr;
     this->Data = val;
     this->Index = idx;
@@ -61,13 +61,13 @@ public:
   // destr
   virtual ~Node() = default;
   // extract sky position
-  virtual Hampixp pointing() const { return this->Pointing; }
+  virtual Hamp pointing() const { return this->Pointing; }
   // extract sky information
   virtual T data() const { return this->Data; }
   // extract sky index
   virtual std::size_t index() const { return this->Index; }
   // update sky position
-  virtual void pointing(const Hampixp &new_pointing) {
+  virtual void pointing(const Hamp &new_pointing) {
     this->Pointing = new_pointing;
   }
   // update sky information
@@ -79,7 +79,7 @@ public:
 // data type T
 // hosts a vector of Node objects
 // the indices of Nodes are trivial
-template <typename T> class Hampix {
+template <typename T> class Hamdis {
 protected:
   // map holder, unique pointer of vector of Nodes
   std::unique_ptr<std::vector<Node<T>>> Map;
@@ -88,11 +88,11 @@ public:
   // HEALPix underfined value for masking
   const double undef{-1.6375e30};
   // dft constr
-  Hampix() { this->Map = std::make_unique<std::vector<Node<T>>>(); }
+  Hamdis() { this->Map = std::make_unique<std::vector<Node<T>>>(); }
   // initialize map with given sample number N
   // Node's Data assigned by the given value
   // Node's Index assigned from 0 to N-1
-  Hampix(const std::size_t &N, const T &v = static_cast<T>(0)) {
+  Hamdis(const std::size_t &N, const T &v = static_cast<T>(0)) {
     this->Map = std::make_unique<std::vector<Node<T>>>(N);
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -103,23 +103,23 @@ public:
     }
   }
   // copy constr
-  Hampix(const Hampix<T> &m) {
+  Hamdis(const Hamdis<T> &m) {
     this->Map.reset(new std::vector<Node<T>>(*(m.Map.get())));
   }
   // move constr
-  Hampix(Hampix<T> &&m) noexcept { this->Map = std::move(m.Map); }
+  Hamdis(Hamdis<T> &&m) noexcept { this->Map = std::move(m.Map); }
   // move assign
-  Hampix &operator=(Hampix<T> &&m) noexcept {
+  Hamdis &operator=(Hamdis<T> &&m) noexcept {
     this->Map = std::move(m.Map);
     return *this;
   }
   // copy assignment
-  Hampix &operator=(const Hampix<T> &m) {
+  Hamdis &operator=(const Hamdis<T> &m) {
     this->Map.reset(new std::vector<Node<T>>(*(m.Map.get())));
     return *this;
   }
   // dft destr
-  virtual ~Hampix() = default;
+  virtual ~Hamdis() = default;
   // extract node data
   virtual T data(const std::size_t &idx) const {
     return this->Map->at(idx).data();
@@ -137,18 +137,18 @@ public:
     this->Map->at(idx).index(new_idx);
   }
   // extract node pointing
-  virtual Hampixp pointing(const std::size_t &idx) const {
+  virtual Hamp pointing(const std::size_t &idx) const {
     return this->Map->at(idx).pointing();
   }
   // set node pointing
-  virtual void pointing(const std::size_t &idx, const Hampixp &new_point) {
+  virtual void pointing(const std::size_t &idx, const Hamp &new_point) {
     this->Map->at(idx).pointing(new_point);
   }
   // extract map size
   virtual std::size_t npix() const { return this->Map->size(); }
   // print to content of each pix to screen
   virtual void print() const {
-    std::cout << "... printing Hampix map information ..." << std::endl;
+    std::cout << "... printing Hamdis map information ..." << std::endl;
     // no need for multi-threading here
     for (auto i = this->Map->begin(); i < this->Map->end(); ++i) {
       std::cout << "index: " << i->index() << "\t"
@@ -177,7 +177,7 @@ public:
 #endif
       for (std::size_t i = 0; i < n; ++i) {
         this->Map->at(i).index(i);
-        this->Map->at(i).pointing(Hampixp(0.0, 0.0));
+        this->Map->at(i).pointing(Hamp(0.0, 0.0));
         this->Map->at(i).data(0.0);
       }
     }
@@ -199,7 +199,7 @@ public:
 
 // using HEALPix RING ordering, with HEALPix Nside as power of 2
 // also having trivial indexing
-template <typename T> class Healmpix final : public Hampix<T> {
+template <typename T> class Hampix final : public Hamdis<T> {
 protected:
   // HEALPix nside_
   std::size_t Nside = 0;
@@ -267,7 +267,7 @@ protected:
   }
   // assigning correct pointing position
   // using HEALPix implementation, equivalent to HEALPix pix2ang function
-  Hampixp fillpoint(const std::size_t &idx) {
+  Hamp fillpoint(const std::size_t &idx) {
     double z{0.0};
     double phi{0.0};
     double sth{0.0};
@@ -320,8 +320,8 @@ protected:
       phi = (iphi - 0.5) * 1.570796326794896619231321691639751442099 / iring;
     }
     // copied from healpix_base.h pix2ang function
-    return have_sth ? Hampixp(std::atan2(sth, z), phi)
-                    : Hampixp(std::acos(z), phi);
+    return have_sth ? Hamp(std::atan2(sth, z), phi)
+                    : Hamp(std::acos(z), phi);
   }
   // copied from HEALPix ring_above function
   std::size_t rabove(const double &z) const {
@@ -362,7 +362,7 @@ protected:
   // interpolate map at given pointing position (linear interpolation with
   // nearby 4 pixels) copied from HEALPix healpix_map.h interpolated_value
   // functions
-  T interpolate(const Hampixp &point) const {
+  T interpolate(const Hamp &point) const {
     // calculate surrounding pixel indices and weights
     // copied from HEALPix healpix_base.cc get_interpol function
     std::array<std::size_t, 4> pix{};
@@ -454,11 +454,11 @@ protected:
 
 public:
   // dft constr
-  Healmpix() : Hampix<T>() {}
+  Hampix() : Hamdis<T>() {}
   // initialize map with given HEALPix Nside
   // Node's Data assigned by the given value
   // Node's Index assigned from 0 to N-1
-  Healmpix(const std::size_t &n, const T &v = static_cast<T>(0)) : Hampix<T>() {
+  Hampix(const std::size_t &n, const T &v = static_cast<T>(0)) : Hamdis<T>() {
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
@@ -472,7 +472,7 @@ public:
       this->Map->at(i).data(v);
     }
   }
-  Healmpix(const std::size_t &n, const std::vector<T> &v) : Hampix<T>() {
+  Hampix(const std::size_t &n, const std::vector<T> &v) : Hamdis<T>() {
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
@@ -487,7 +487,7 @@ public:
     }
   }
   // copy constr
-  Healmpix(const Healmpix<T> &m) : Hampix<T>(m) {
+  Hampix(const Hampix<T> &m) : Hamdis<T>(m) {
     this->Nside = m.Nside;
     this->Order = m.Order;
     this->Npix = m.Npix;
@@ -497,7 +497,7 @@ public:
     this->Fact2 = m.Fact2;
   }
   // move constr
-  Healmpix(Healmpix<T> &&m) : Hampix<T>(std::move(m)) {
+  Hampix(Hampix<T> &&m) : Hamdis<T>(std::move(m)) {
     this->Nside = std::move(m.Nside);
     this->Order = std::move(m.Order);
     this->Npix = std::move(m.Npix);
@@ -507,8 +507,8 @@ public:
     this->Fact2 = std::move(m.Fact2);
   }
   // move assign
-  Healmpix &operator=(Healmpix<T> &&m) noexcept {
-    Hampix<T>::operator=(std::move(m));
+  Hampix &operator=(Hampix<T> &&m) noexcept {
+    Hamdis<T>::operator=(std::move(m));
     this->Nside = std::move(m.Nside);
     this->Order = std::move(m.Order);
     this->Npix = std::move(m.Npix);
@@ -519,8 +519,8 @@ public:
     return *this;
   }
   // copy assignment
-  Healmpix &operator=(const Healmpix<T> &m) {
-    Hampix<T>::operator=(m);
+  Hampix &operator=(const Hampix<T> &m) {
+    Hamdis<T>::operator=(m);
     this->Nside = m.Nside;
     this->Order = m.Order;
     this->Npix = m.Npix;
@@ -531,7 +531,7 @@ public:
     return *this;
   }
   // dft destr
-  virtual ~Healmpix() = default;
+  virtual ~Hampix() = default;
   // nside
   std::size_t nside() const { return this->Nside; }
   // npix
@@ -568,7 +568,7 @@ public:
     }
   }
   // add maps
-  void accumulate(const Healmpix<T> &m) {
+  void accumulate(const Hampix<T> &m) {
     // in same Nside
     if (this->Npix == m.npix()) {
 #ifdef _OPENMP

@@ -2,11 +2,11 @@
 
 #include <cstddef> // for std::size_t
 #include <gtest/gtest.h>
-#include <hampix.h>
-#include <hampixp.h>
+#include <hamp.h>
+#include <hamdis.h>
 #include <memory>
 
-const double cgs_pi = 3.14159265358979;
+const double cgs_pi = 3.141592653589793238462643383279502884197;
 
 TEST(node, basic) {
   // default ctor
@@ -21,7 +21,7 @@ TEST(node, basic) {
   EXPECT_EQ(node_dft.data(), double(0.2));
 
   // update pointing
-  Hampixp new_point(1.2 * cgs_pi, 2.1 * cgs_pi);
+  Hamp new_point(1.2 * cgs_pi, 2.1 * cgs_pi);
   node_dft.pointing(new_point);
   EXPECT_NEAR(node_dft.pointing().theta(), double(0.2 * cgs_pi), 1.0e-10);
   EXPECT_NEAR(node_dft.pointing().phi(), double(0.1 * cgs_pi), 1.0e-10);
