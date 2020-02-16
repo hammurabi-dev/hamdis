@@ -2,9 +2,8 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
+
 #include <hamvec.h>
-#include <iostream>
-#include <memory>
 
 TEST(vector, basic) {
   // default ctor

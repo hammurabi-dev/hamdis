@@ -5,9 +5,11 @@
 
 #include <cassert>
 #include <cmath>
-#include <iostream>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
+
+#include <hamtype.h>
 
 template <int dim, typename T> class Hamvec {
 protected:
@@ -28,7 +30,7 @@ public:
       this->Ele = {T(0), T(0), T(0)};
       break;
     default:
-      std::cerr << "unsupported dimension";
+      throw std::runtime_error("unsupported dimension");
       break;
     }
   }
@@ -163,21 +165,21 @@ public:
     return false;
   }
   // vector length
-  // cast into double type
-  double length() const {
-    double tmp{0};
+  // cast into ham_float type
+  ham_float length() const {
+    ham_float tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      const double cache = static_cast<double>(this->Ele[i]);
+      const ham_float cache = static_cast<ham_float>(this->Ele[i]);
       tmp += cache * cache;
     }
     return std::sqrt(tmp);
   }
   // vector squared length
-  // cast into double type
-  double lengthsq() const {
-    double tmp{0};
+  // cast into ham_float type
+  ham_float lengthsq() const {
+    ham_float tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      const double cache = static_cast<double>(this->Ele[i]);
+      const ham_float cache = static_cast<ham_float>(this->Ele[i]);
       tmp += cache * cache;
     }
     return tmp;
@@ -191,36 +193,37 @@ public:
     }
   }
   // versor
-  // cast into double type
-  Hamvec<dim, double> versor() const {
-    Hamvec<dim, double> tmp;
+  // cast into ham_float type
+  Hamvec<dim, ham_float> versor() const {
+    Hamvec<dim, ham_float> tmp;
     for (unsigned int i = 0; i < dim; ++i)
-      tmp[i] = static_cast<double>(this->Ele[i]);
+      tmp[i] = static_cast<ham_float>(this->Ele[i]);
     const auto l2{tmp.lengthsq()};
     if (l2 != 0)
       tmp /= std::sqrt(l2);
     return tmp;
   }
   // inner product
-  // cast into double type
-  template <typename R> double dotprod(const Hamvec<dim, R> &v) const {
-    double tmp{0};
+  // cast into ham_float type
+  template <typename R> ham_float dotprod(const Hamvec<dim, R> &v) const {
+    ham_float tmp{0};
     for (unsigned int i = 0; i < dim; ++i) {
-      tmp += static_cast<double>(this->Ele[i]) * static_cast<double>(v[i]);
+      tmp +=
+          static_cast<ham_float>(this->Ele[i]) * static_cast<ham_float>(v[i]);
     }
     return tmp;
   }
   // cross product, works in 3D only
-  // cast into double type
+  // cast into ham_float type
   template <typename R>
-  Hamvec<dim, double> crossprod(const Hamvec<dim, R> &v) const {
+  Hamvec<dim, ham_float> crossprod(const Hamvec<dim, R> &v) const {
     assert(dim == 3);
-    Hamvec<dim, double> tmp;
+    Hamvec<dim, ham_float> tmp;
     for (unsigned int i = 0; i < dim; ++i) {
-      tmp[i] = (static_cast<double>(this->Ele[(i + 1) % 3]) *
-                    static_cast<double>(v[(i + 2) % 3]) -
-                static_cast<double>(this->Ele[(i + 2) % 3]) *
-                    static_cast<double>(v[(i + 1) % 3]));
+      tmp[i] = (static_cast<ham_float>(this->Ele[(i + 1) % 3]) *
+                    static_cast<ham_float>(v[(i + 2) % 3]) -
+                static_cast<ham_float>(this->Ele[(i + 2) % 3]) *
+                    static_cast<ham_float>(v[(i + 1) % 3]));
     }
     return tmp;
   }

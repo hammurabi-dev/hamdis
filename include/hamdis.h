@@ -1,16 +1,17 @@
-#ifndef HAMMURABI_PIX_H
-#define HAMMURABI_PIX_H
+#ifndef HAMMURABI_DIS_H
+#define HAMMURABI_DIS_H
 
 #include <array>
-#include <cassert>
 #include <cmath>
-#include <cstddef> // for std::size_t
-#include <hamp.h>
 #include <iostream>
 #include <memory>
 #include <omp.h>
 #include <stdexcept>
 #include <vector>
+
+#include <cgsunits.h>
+#include <hamp.h>
+#include <hamtype.h>
 
 // data type T
 // key structure of each sample point
@@ -21,13 +22,13 @@ protected:
   // pixel data
   T Data{static_cast<T>(0)};
   // pixel index
-  std::size_t Index{0};
+  ham_uint Index{0};
 
 public:
   // constructor
   Node() = default;
   // direct constr
-  Node(const Hamp &ptr, const T &val, const std::size_t &idx = 0) {
+  Node(const Hamp &ptr, const T &val, const ham_uint &idx = 0) {
     this->Pointing = ptr;
     this->Data = val;
     this->Index = idx;
@@ -65,15 +66,20 @@ public:
   // extract sky information
   virtual T data() const { return this->Data; }
   // extract sky index
-  virtual std::size_t index() const { return this->Index; }
+  virtual ham_uint index() const { return this->Index; }
   // update sky position
   virtual void pointing(const Hamp &new_pointing) {
     this->Pointing = new_pointing;
   }
+  // update sky position
+  virtual void pointing(const ham_float &theta, const ham_float &phi) {
+    this->Pointing.theta(theta);
+    this->Pointing.phi(phi);
+  }
   // update sky information
   virtual void data(const T &new_data) { this->Data = new_data; }
   // update ksy index
-  virtual void index(const std::size_t &new_idx) { this->Index = new_idx; }
+  virtual void index(const ham_uint &new_idx) { this->Index = new_idx; }
 };
 
 // data type T
@@ -86,18 +92,18 @@ protected:
 
 public:
   // HEALPix underfined value for masking
-  const double undef{-1.6375e30};
+  const ham_float undef{-1.6375e30};
   // dft constr
   Hamdis() { this->Map = std::make_unique<std::vector<Node<T>>>(); }
   // initialize map with given sample number N
   // Node's Data assigned by the given value
   // Node's Index assigned from 0 to N-1
-  Hamdis(const std::size_t &N, const T &v = static_cast<T>(0)) {
+  Hamdis(const ham_uint &N, const T &v = static_cast<T>(0)) {
     this->Map = std::make_unique<std::vector<Node<T>>>(N);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (std::size_t i = 0; i < N; ++i) {
+    for (ham_uint i = 0; i < N; ++i) {
       this->Map->at(i).index(i);
       this->Map->at(i).data(v);
     }
@@ -121,31 +127,36 @@ public:
   // dft destr
   virtual ~Hamdis() = default;
   // extract node data
-  virtual T data(const std::size_t &idx) const {
+  virtual T data(const ham_uint &idx) const {
     return this->Map->at(idx).data();
   }
   // set node data
-  virtual void data(const std::size_t &idx, const T &v) {
+  virtual void data(const ham_uint &idx, const T &v) {
     this->Map->at(idx).data(v);
   }
   // extract node index
-  virtual std::size_t index(const std::size_t &idx) const {
+  virtual ham_uint index(const ham_uint &idx) const {
     return this->Map->at(idx).index();
   }
   // set node index
-  virtual void index(const std::size_t &idx, const std::size_t &new_idx) {
+  virtual void index(const ham_uint &idx, const ham_uint &new_idx) {
     this->Map->at(idx).index(new_idx);
   }
   // extract node pointing
-  virtual Hamp pointing(const std::size_t &idx) const {
+  virtual Hamp pointing(const ham_uint &idx) const {
     return this->Map->at(idx).pointing();
   }
   // set node pointing
-  virtual void pointing(const std::size_t &idx, const Hamp &new_point) {
+  virtual void pointing(const ham_uint &idx, const Hamp &new_point) {
     this->Map->at(idx).pointing(new_point);
   }
+  // set node pointing
+  virtual void pointing(const ham_uint &idx, const ham_float &theta,
+                        const ham_float &phi) {
+    this->Map->at(idx).pointing(theta, phi);
+  }
   // extract map size
-  virtual std::size_t npix() const { return this->Map->size(); }
+  virtual ham_uint npix() const { return this->Map->size(); }
   // print to content of each pix to screen
   virtual void print() const {
     std::cout << "... printing Hamdis map information ..." << std::endl;
@@ -158,13 +169,13 @@ public:
     }
   }
   // reset with given nside and clean up data
-  virtual void reset(const std::size_t &n = 0) {
+  virtual void reset(const ham_uint &n = 0) {
     // cleaning an used map with correct size
     if (n == 0 or this->Map->size() == n) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < this->Map->size(); ++i) {
+      for (ham_uint i = 0; i < this->Map->size(); ++i) {
         this->Map->at(i).data(0.0);
       }
     } else {
@@ -175,7 +186,7 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < n; ++i) {
+      for (ham_uint i = 0; i < n; ++i) {
         this->Map->at(i).index(i);
         this->Map->at(i).pointing(Hamp(0.0, 0.0));
         this->Map->at(i).data(0.0);
@@ -183,15 +194,15 @@ public:
     }
   }
   // undefine a certain Node
-  virtual void undefine(const std::size_t &idx) {
+  virtual void undefine(const ham_uint &idx) {
     this->Map->at(idx).data(this->undef);
   }
   // undefine a list of Nodes
-  virtual void undefine(const std::vector<std::size_t> &list) {
+  virtual void undefine(const std::vector<ham_uint> &list) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (std::size_t i = 0; i < list.size(); ++i) {
+    for (ham_uint i = 0; i < list.size(); ++i) {
       this->Map->at(list[i]).data(this->undef);
     }
   }
@@ -202,18 +213,18 @@ public:
 template <typename T> class Hampix final : public Hamdis<T> {
 protected:
   // HEALPix nside_
-  std::size_t Nside = 0;
+  ham_uint Nside = 0;
   // HEALPix order_
   int Order = -1;
   // HEALPix npix_
-  std::size_t Npix = 0;
+  ham_uint Npix = 0;
   // HEALPix npface_
-  std::size_t Npface = 0;
+  ham_uint Npface = 0;
   // HEALPix ncap_
-  std::size_t Ncap = 0;
+  ham_uint Ncap = 0;
   // HEALPix fact1_, fact2_
-  double Fact1 = 0.0;
-  double Fact2 = 0.0;
+  ham_float Fact1 = 0.0;
+  ham_float Fact2 = 0.0;
   // initialize constants
   // copied from healpix_base.cc SetNside function
   void prepare() {
@@ -235,8 +246,8 @@ protected:
   }
   // copied from HEALPix cxxutils.h ilog2 function
   // Returns the largest integer n that fulfills 2^n<=arg.
-  inline unsigned int ilog2(const std::size_t &n) {
-    std::size_t tmp{n};
+  inline unsigned int ilog2(const ham_uint &n) {
+    ham_uint tmp{n};
     unsigned int res{0};
     while (tmp > 0x0000FFFF) {
       res += 16;
@@ -261,93 +272,92 @@ protected:
   }
   // copied from HEALPix cxxutils.h isqrt function
   // Returns the integer n, which fulfills n*n<=arg<(n+1)*(n+1).
-  inline std::size_t isqrt(const std::size_t &n) {
-    return static_cast<std::size_t>(
-        std::floor(std::sqrt(static_cast<double>(n) + 0.5)));
+  inline ham_uint isqrt(const ham_uint &n) {
+    return static_cast<ham_uint>(
+        std::floor(std::sqrt(static_cast<ham_float>(n) + 0.5)));
   }
   // assigning correct pointing position
   // using HEALPix implementation, equivalent to HEALPix pix2ang function
-  Hamp fillpoint(const std::size_t &idx) {
-    double z{0.0};
-    double phi{0.0};
-    double sth{0.0};
+  Hamp fillpoint(const ham_uint &idx) {
+    ham_float z{0.0};
+    ham_float phi{0.0};
+    ham_float sth{0.0};
     bool have_sth{false};
     // healpix RING ordering
     // copied from HEALPix healpix_base.cc pix2loc function
     // counted from North pole
     // North Polar cap
     if (idx < this->Ncap) {
-      const std::size_t iring{
-          (1 + static_cast<std::size_t>(this->isqrt(1 + 2 * idx))) >> 1};
-      const std::size_t iphi{(idx + 1) - 2 * iring * (iring - 1)};
-      const double tmp{(iring * iring) * this->Fact2};
+      const ham_uint iring{
+          (1 + static_cast<ham_uint>(this->isqrt(1 + 2 * idx))) >> 1};
+      const ham_uint iphi{(idx + 1) - 2 * iring * (iring - 1)};
+      const ham_float tmp{(iring * iring) * this->Fact2};
       z = 1.0 - tmp;
       if (z > 0.99) {
         sth = std::sqrt(tmp * (2.0 - tmp));
         have_sth = true;
       }
-      phi = (iphi - 0.5) * 1.570796326794896619231321691639751442099 / iring;
+      phi = (iphi - 0.5) * cgs::halfpi / iring;
     }
     // Equatorial region
     else if (idx < (this->Npix - this->Ncap)) {
-      const std::size_t nl4{4 * this->Nside};
-      const std::size_t ip{idx - this->Ncap};
-      const std::size_t tmp{(this->Order >= 0) ? ip >> (this->Order + 2)
-                                               : ip / nl4};
-      const std::size_t iring{tmp + this->Nside};
-      const std::size_t iphi{ip - nl4 * tmp + 1};
+      const ham_uint nl4{4 * this->Nside};
+      const ham_uint ip{idx - this->Ncap};
+      const ham_uint tmp{(this->Order >= 0) ? ip >> (this->Order + 2)
+                                            : ip / nl4};
+      const ham_uint iring{tmp + this->Nside};
+      const ham_uint iphi{ip - nl4 * tmp + 1};
       // 1 if iring+nside is odd, 1/2 otherwise
-      const double fodd{((iring + this->Nside) & 1) ? 1 : 0.5};
+      const ham_float fodd{((iring + this->Nside) & 1) ? 1 : 0.5};
       // nside can be smaller than iring
-      z = (static_cast<double>(2 * this->Nside) - static_cast<double>(iring)) *
+      z = (static_cast<ham_float>(2 * this->Nside) -
+           static_cast<ham_float>(iring)) *
           this->Fact1;
-      phi = (iphi - fodd) * 1.570796326794896619231321691639751442099 * 1.5 *
-            this->Fact1;
+      phi = (iphi - fodd) * cgs::halfpi * 1.5 * this->Fact1;
     }
     // South Polar cap
     else {
-      const std::size_t ip{this->Npix - idx};
+      const ham_uint ip{this->Npix - idx};
       // counted from South pole
-      const std::size_t iring{
-          (1 + static_cast<std::size_t>(this->isqrt(2 * ip - 1))) >> 1};
-      const std::size_t iphi{4 * iring + 1 - (ip - 2 * iring * (iring - 1))};
-      const double tmp{(iring * iring) * this->Fact2};
+      const ham_uint iring{
+          (1 + static_cast<ham_uint>(this->isqrt(2 * ip - 1))) >> 1};
+      const ham_uint iphi{4 * iring + 1 - (ip - 2 * iring * (iring - 1))};
+      const ham_float tmp{(iring * iring) * this->Fact2};
       z = tmp - 1.0;
       if (z < -0.99) {
         sth = std::sqrt(tmp * (2.0 - tmp));
         have_sth = true;
       }
-      phi = (iphi - 0.5) * 1.570796326794896619231321691639751442099 / iring;
+      phi = (iphi - 0.5) * cgs::halfpi / iring;
     }
     // copied from healpix_base.h pix2ang function
-    return have_sth ? Hamp(std::atan2(sth, z), phi)
-                    : Hamp(std::acos(z), phi);
+    return have_sth ? Hamp(std::atan2(sth, z), phi) : Hamp(std::acos(z), phi);
   }
   // copied from HEALPix ring_above function
-  std::size_t rabove(const double &z) const {
-    double az{std::fabs(z)};
-    if (az <= 0.666666666666666666666666666666666666667) // equatorial region
-      return static_cast<std::size_t>(this->Nside * (2 - 1.5 * z));
-    const std::size_t iring{
-        static_cast<std::size_t>(this->Nside * std::sqrt(3 * (1 - az)))};
+  ham_uint rabove(const ham_float &z) const {
+    ham_float az{std::fabs(z)};
+    if (az <= cgs::twothirds) // equatorial region
+      return static_cast<ham_uint>(this->Nside * (2 - 1.5 * z));
+    const ham_uint iring{
+        static_cast<ham_uint>(this->Nside * std::sqrt(3 * (1 - az)))};
     return (z > 0) ? iring : 4 * this->Nside - iring - 1;
   }
   // copied from HEALPix get_ring_info2 function
-  void rinfo(const std::size_t &ring, std::size_t &startpix, long int &ringpix,
-             double &theta, bool &shifted) const {
-    const std::size_t northring{
-        (ring > 2 * this->Nside) ? 4 * this->Nside - ring : ring};
+  void rinfo(const ham_uint &ring, ham_uint &startpix, ham_int &ringpix,
+             ham_float &theta, bool &shifted) const {
+    const ham_uint northring{(ring > 2 * this->Nside) ? 4 * this->Nside - ring
+                                                      : ring};
     if (northring < this->Nside) { // northring < Nside
-      const double tmp{northring * northring * this->Fact2};
-      const double costheta{1 - tmp};
-      const double sintheta{std::sqrt(tmp * (2 - tmp))};
+      const ham_float tmp{northring * northring * this->Fact2};
+      const ham_float costheta{1 - tmp};
+      const ham_float sintheta{std::sqrt(tmp * (2 - tmp))};
       theta = std::atan2(sintheta, costheta);
       ringpix = 4 * northring;
       shifted = true;
       startpix = 2 * northring * (northring - 1);
     } else { // northring >= Nside
-      theta = std::acos((static_cast<double>(2 * this->Nside) -
-                         static_cast<double>(northring)) *
+      theta = std::acos((static_cast<ham_float>(2 * this->Nside) -
+                         static_cast<ham_float>(northring)) *
                         this->Fact1);
       ringpix = 4 * this->Nside;
       shifted = ((northring - this->Nside) & 1) == 0;
@@ -355,7 +365,7 @@ protected:
     }
     // southern hemisphere extra correction
     if (northring != ring) {
-      theta = 3.141592653589793238462643383279502884197 - theta;
+      theta = cgs::pi - theta;
       startpix = this->Npix - startpix - ringpix;
     }
   }
@@ -365,23 +375,23 @@ protected:
   T interpolate(const Hamp &point) const {
     // calculate surrounding pixel indices and weights
     // copied from HEALPix healpix_base.cc get_interpol function
-    std::array<std::size_t, 4> pix{};
-    std::array<double, 4> wght{};
-    const double z{std::cos(point.theta())};
-    const std::size_t ring1{rabove(z)};
-    const std::size_t ring2{ring1 + 1};
-    double theta1{0.0}, theta2{0.0};
+    std::array<ham_uint, 4> pix{};
+    std::array<ham_float, 4> wght{};
+    const ham_float z{std::cos(point.theta())};
+    const ham_uint ring1{rabove(z)};
+    const ham_uint ring2{ring1 + 1};
+    ham_float theta1{0.0}, theta2{0.0};
     // ring above and ring below
     if (ring1 > 0) {
-      std::size_t start;
-      long int ringpix;
+      ham_uint start;
+      ham_int ringpix;
       bool shift;
       this->rinfo(ring1, start, ringpix, theta1, shift);
-      const double dphi{6.283185307179586476925286766559005768394 / ringpix};
-      const double tmp{(point.phi() / dphi - 0.5 * shift)};
-      long int i1{static_cast<long int>(tmp) - static_cast<long int>(tmp < 0)};
-      const double weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
-      long int i2{i1 + 1};
+      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
+      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
+      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      ham_int i2{i1 + 1};
       i1 += ringpix * (i1 < 0);
       i2 -= ringpix * (i2 >= ringpix);
       pix[0] = start + i1;
@@ -390,15 +400,15 @@ protected:
       wght[1] = weight;
     }
     if (ring2 < (4 * this->Nside)) {
-      std::size_t start;
-      long int ringpix;
+      ham_uint start;
+      ham_int ringpix;
       bool shift;
       this->rinfo(ring2, start, ringpix, theta2, shift);
-      const double dphi{6.283185307179586476925286766559005768394 / ringpix};
-      const double tmp{(point.phi() / dphi - 0.5 * shift)};
-      long int i1{static_cast<long int>(tmp) - static_cast<long int>(tmp < 0)};
-      const double weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
-      long int i2{i1 + 1};
+      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
+      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
+      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      ham_int i2{i1 + 1};
       i1 += ringpix * (i1 < 0);
       i2 -= ringpix * (i2 >= ringpix);
       pix[2] = start + i1;
@@ -408,10 +418,10 @@ protected:
     }
     // special cases + post correction
     if (ring1 == 0) {
-      const double wtheta{point.theta() / theta2};
+      const ham_float wtheta{point.theta() / theta2};
       wght[2] *= wtheta;
       wght[3] *= wtheta;
-      const double fac{(1.0 - wtheta) * 0.25};
+      const ham_float fac{(1.0 - wtheta) * 0.25};
       wght[0] = fac;
       wght[1] = fac;
       wght[2] += fac;
@@ -419,11 +429,10 @@ protected:
       pix[0] = (pix[2] + 2) & 3;
       pix[1] = (pix[3] + 2) & 3;
     } else if (ring2 == (4 * this->Nside)) {
-      double wtheta{(point.theta() - theta1) /
-                    (3.141592653589793238462643383279502884197 - theta1)};
+      ham_float wtheta{(point.theta() - theta1) / (cgs::pi - theta1)};
       wght[0] *= (1.0 - wtheta);
       wght[1] *= (1.0 - wtheta);
-      double fac{wtheta * 0.25};
+      ham_float fac{wtheta * 0.25};
       wght[0] += fac;
       wght[1] += fac;
       wght[2] = fac;
@@ -431,7 +440,7 @@ protected:
       pix[2] = ((pix[0] + 2) & 3) + this->Npix - 4;
       pix[3] = ((pix[1] + 2) & 3) + this->Npix - 4;
     } else {
-      double wtheta{(point.theta() - theta1) / (theta2 - theta1)};
+      ham_float wtheta{(point.theta() - theta1) / (theta2 - theta1)};
       wght[0] *= (1.0 - wtheta);
       wght[1] *= (1.0 - wtheta);
       wght[2] *= wtheta;
@@ -439,7 +448,7 @@ protected:
     }
     // calculate interpolated result
     // copied from HEALPix healpix_map.h interpolation function
-    double wtot{0.0};
+    ham_float wtot{0.0};
     T res{static_cast<T>(0)};
     for (int i = 0; i < 4; ++i) {
       T val{this->Map->at(pix[i]).data()};
@@ -458,29 +467,29 @@ public:
   // initialize map with given HEALPix Nside
   // Node's Data assigned by the given value
   // Node's Index assigned from 0 to N-1
-  Hampix(const std::size_t &n, const T &v = static_cast<T>(0)) : Hamdis<T>() {
+  Hampix(const ham_uint &n, const T &v = static_cast<T>(0)) : Hamdis<T>() {
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
-        static_cast<const std::size_t>(this->Npix));
+        static_cast<const ham_uint>(this->Npix));
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (std::size_t i = 0; i < this->Npix; ++i) {
+    for (ham_uint i = 0; i < this->Npix; ++i) {
       this->Map->at(i).index(i);
       this->Map->at(i).pointing(this->fillpoint(i));
       this->Map->at(i).data(v);
     }
   }
-  Hampix(const std::size_t &n, const std::vector<T> &v) : Hamdis<T>() {
+  Hampix(const ham_uint &n, const std::vector<T> &v) : Hamdis<T>() {
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
-        static_cast<const std::size_t>(this->Npix));
+        static_cast<const ham_uint>(this->Npix));
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (std::size_t i = 0; i < this->Npix; ++i) {
+    for (ham_uint i = 0; i < this->Npix; ++i) {
       this->Map->at(i).index(i);
       this->Map->at(i).pointing(this->fillpoint(i));
       this->Map->at(i).data(v[i]);
@@ -533,20 +542,17 @@ public:
   // dft destr
   virtual ~Hampix() = default;
   // nside
-  std::size_t nside() const { return this->Nside; }
+  ham_uint nside() const { return this->Nside; }
   // npix
-  std::size_t npix() const override {
-    assert(this->Npix == this->Map->size());
-    return this->Npix;
-  }
+  ham_uint npix() const override { return this->Npix; }
   // reset with given nside and clean up data
-  void reset(const std::size_t &n = 0) override {
+  void reset(const ham_uint &n = 0) override {
     // cleaning an used map with correct size
     if (n == 0 or this->Nside == n) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < this->Npix; ++i) {
+      for (ham_uint i = 0; i < this->Npix; ++i) {
         this->Map->at(i).data(0.0);
       }
     } else {
@@ -556,11 +562,11 @@ public:
       this->Nside = n;
       this->prepare();
       this->Map = std::make_unique<std::vector<Node<T>>>(
-          static_cast<const std::size_t>(this->Npix));
+          static_cast<const ham_uint>(this->Npix));
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < this->Npix; ++i) {
+      for (ham_uint i = 0; i < this->Npix; ++i) {
         this->Map->at(i).index(i);
         this->Map->at(i).pointing(this->fillpoint(i));
         this->Map->at(i).data(0.0);
@@ -574,7 +580,7 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < this->Npix; ++i) {
+      for (ham_uint i = 0; i < this->Npix; ++i) {
         const T cache = this->Map->at(i).data();
         this->Map->at(i).data(cache + m.data(i));
       }
@@ -585,7 +591,7 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (std::size_t i = 0; i < this->Npix; ++i) {
+      for (ham_uint i = 0; i < this->Npix; ++i) {
         const T cache = this->Map->at(i).data();
         this->Map->at(i).data(cache +
                               m.interpolate(this->Map->at(i).pointing()));

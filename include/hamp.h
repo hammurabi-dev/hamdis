@@ -10,17 +10,18 @@
 #define HAMMURABI_POINTING_H
 
 #include <cmath>
-#include <hamvec.h>
 
-const double cgspi = 3.14159265358979;
+#include <cgsunits.h>
+#include <hamtype.h>
+#include <hamvec.h>
 
 class Hamp {
 protected:
-  double Theta{0};
-  double Phi{0};
+  ham_float Theta{0};
+  ham_float Phi{0};
   // normalize the angles so that 0<=theta<=pi and 0<=phi<2*pi
   void norm();
-  
+
 public:
   Hamp() = default;
   // copy constr
@@ -46,52 +47,52 @@ public:
     return *this;
   }
   // explicit
-  Hamp(const double &t, const double &p) {
+  Hamp(const ham_float &t, const ham_float &p) {
     this->Theta = t;
     this->Phi = p;
     norm();
   }
   // from Caretesian vector (not necessarily a versor)
-  Hamp(const Hamvec<3, double> &vec) {
-    const double x{vec[0]};
-    const double y{vec[1]};
-    const double z{vec[2]};
-    this->Theta = std::fmod(std::atan2(sqrt(x * x + y * y), z), cgspi);
-    this->Theta += (this->Theta < 0) * cgspi;
-    this->Phi = std::fmod(std::atan2(y, x), 2. * cgspi);
-    this->Phi += (this->Phi < 0) * 2. * cgspi;
+  Hamp(const Hamvec<3, ham_float> &vec) {
+    const ham_float x{vec[0]};
+    const ham_float y{vec[1]};
+    const ham_float z{vec[2]};
+    this->Theta = std::fmod(std::atan2(sqrt(x * x + y * y), z), cgs::pi);
+    this->Theta += (this->Theta < 0) * cgs::pi;
+    this->Phi = std::fmod(std::atan2(y, x), cgs::twopi);
+    this->Phi += (this->Phi < 0) * cgs::twopi;
   }
   ~Hamp() = default;
-  
+
   // read in theta value
-  void theta(const double &t) {
-    this->Theta = std::fmod(t, cgspi);
-    this->Theta += (this->Theta < 0) * cgspi;
+  void theta(const ham_float &t) {
+    this->Theta = std::fmod(t, cgs::pi);
+    this->Theta += (this->Theta < 0) * cgs::pi;
   }
   // read in phi value
-  void phi(const double &p) {
-    this->Phi = std::fmod(p, 2. * cgspi);
-    this->Phi += (this->Phi < 0) * 2. * cgspi;
+  void phi(const ham_float &p) {
+    this->Phi = std::fmod(p, cgs::twopi);
+    this->Phi += (this->Phi < 0) * cgs::twopi;
   }
   // return theta value
-  double theta() const { return this->Theta; }
+  ham_float theta() const { return this->Theta; }
   // return phi value
-  double phi() const { return this->Phi; }
+  ham_float phi() const { return this->Phi; }
   // return to Cartesian versor
-  Hamvec<3, double> versor() const;
+  Hamvec<3, ham_float> versor() const;
 };
 
 void Hamp::norm() {
-  this->Theta = std::fmod(this->Theta, cgspi);
-  this->Theta += (this->Theta < 0) * cgspi;
-  this->Phi = std::fmod(this->Phi, 2. * cgspi);
-  this->Phi += (this->Phi < 0) * 2. * cgspi;
+  this->Theta = std::fmod(this->Theta, cgs::pi);
+  this->Theta += (this->Theta < 0) * cgs::pi;
+  this->Phi = std::fmod(this->Phi, cgs::twopi);
+  this->Phi += (this->Phi < 0) * cgs::twopi;
 }
 
-Hamvec<3, double> Hamp::versor() const {
-  const double sth{std::sin(this->Theta)};
-  return Hamvec<3, double>{sth * std::cos(this->Phi), sth * std::sin(this->Phi),
-    std::cos(this->Theta)};
+Hamvec<3, ham_float> Hamp::versor() const {
+  const ham_float sth{std::sin(this->Theta)};
+  return Hamvec<3, ham_float>{sth * std::cos(this->Phi),
+                              sth * std::sin(this->Phi), std::cos(this->Theta)};
 }
 
 #endif

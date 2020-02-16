@@ -2,9 +2,9 @@ FILE(COPY ${CMAKE_CURRENT_LIST_DIR}/reference DESTINATION ${CMAKE_CURRENT_BINARY
 SET(_timer_tests timer_tests.cc)
 SET(_hamvec_tests hamvec_tests.cc)
 SET(_hamp_tests hamp_tests.cc)
-SET(_hamdis_tests hamdis_tests.cc)
 SET(_node_tests node_tests.cc)
-
+SET(_hamdis_tests hamdis_tests.cc)
+SET(_hamio_tests hamio_tests.cc)
 
 FOREACH(_t ${_hamvec_tests})
   ADD_EXECUTABLE(${_t}_exe ${_t} ${GTEST_LIB_SOURCES} ${GTEST_MAIN_SOURCES})
@@ -28,6 +28,13 @@ FOREACH(_t ${_node_tests})
 ENDFOREACH()
 
 FOREACH(_t ${_hamdis_tests})
+  ADD_EXECUTABLE(${_t}_exe ${_t} ${GTEST_LIB_SOURCES} ${GTEST_MAIN_SOURCES})
+  TARGET_INCLUDE_DIRECTORIES(${_t}_exe PRIVATE ${ALL_INCLUDE_DIR} ${GTEST_INCLUDE_DIRS})
+  TARGET_LINK_LIBRARIES(${_t}_exe ${CMAKE_THREAD_LIBS_INIT} ${ALL_LIBRARIES} hamdis)
+  ADD_TEST(${_t} ${_t}_exe)
+ENDFOREACH()
+
+FOREACH(_t ${_hamio_tests})
   ADD_EXECUTABLE(${_t}_exe ${_t} ${GTEST_LIB_SOURCES} ${GTEST_MAIN_SOURCES})
   TARGET_INCLUDE_DIRECTORIES(${_t}_exe PRIVATE ${ALL_INCLUDE_DIR} ${GTEST_INCLUDE_DIRS})
   TARGET_LINK_LIBRARIES(${_t}_exe ${CMAKE_THREAD_LIBS_INIT} ${ALL_LIBRARIES} hamdis)
