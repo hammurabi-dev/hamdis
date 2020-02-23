@@ -24,7 +24,8 @@ before_script:
   - cd ${TRAVIS_BUILD_DIR}
   - git clone https://github.com/google/googletest.git googletest
   - cd googletest && mkdir build 
-  - cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/tmp/local .. && make && make install && cp ../googletest/src/* /tmp/local/src
+  - cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=/tmp/local .. && make && make install 
+  - mkdir /tmp/local/src && cp ../googletest/src/* /tmp/local/src
 script:
   - cd ${TRAVIS_BUILD_DIR} && mkdir build
   - cd build && cmake .. && make
