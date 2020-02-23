@@ -1,5 +1,7 @@
 # hamdis
 
+[![Build Status](https://travis-ci.org/gioacchinowang/hamdis.svg?branch=master)](https://travis-ci.org/gioacchinowang/hamdis)
+
 - the **HAM**murabi **DIS**cretization supporting module
 
 The hammurabi discretization library is designed for hammurabi package, 
