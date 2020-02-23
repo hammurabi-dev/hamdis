@@ -77,7 +77,7 @@ public:
     std::fstream infile(this->Filename.c_str(),
                         std::ios::in | std::ios::binary);
     if (infile.is_open()) {
-      ham_float tmpfloat, tmpfloat2;
+      T tmpfloat, tmpfloat2;
       ham_uint tmpuint;
       // unable to multithread
       for (ham_uint i = 0; i < m.npix(); ++i) {
@@ -87,12 +87,12 @@ public:
         infile.read(reinterpret_cast<char *>(&tmpuint), sizeof(ham_uint));
         m.index(tmpuint, tmpuint);
         // theta
-        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(ham_float));
+        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(T));
         // phi
-        infile.read(reinterpret_cast<char *>(&tmpfloat2), sizeof(ham_float));
+        infile.read(reinterpret_cast<char *>(&tmpfloat2), sizeof(T));
         m.pointing(tmpuint, tmpfloat, tmpfloat2);
         // data
-        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(ham_float));
+        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(T));
         m.data(tmpuint, tmpfloat);
       }
       infile.close();
@@ -104,13 +104,13 @@ public:
     std::fstream infile(this->Filename.c_str(),
                         std::ios::in | std::ios::binary);
     if (infile.is_open()) {
-      ham_float tmpfloat;
+      T tmpfloat;
       // unable to multithread
       for (ham_uint i = 0; i < m.npix(); ++i) {
         if (infile.eof())
           throw std::runtime_error("unexpected end of file");
         // data
-        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(ham_float));
+        infile.read(reinterpret_cast<char *>(&tmpfloat), sizeof(T));
         m.data(i, tmpfloat);
       }
       infile.close();

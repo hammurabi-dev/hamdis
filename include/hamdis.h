@@ -168,7 +168,7 @@ public:
                 << i->pointing().phi() << std::endl;
     }
   }
-  // reset with given nside and clean up data
+  // reset with given size and clean up data
   virtual void reset(const ham_uint &n = 0) {
     // cleaning an used map with correct size
     if (n == 0 or this->Map->size() == n) {
@@ -225,6 +225,8 @@ protected:
   // HEALPix fact1_, fact2_
   ham_float Fact1 = 0.0;
   ham_float Fact2 = 0.0;
+  std::array<ham_int, 12> Jrll = {2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4};
+  std::array<ham_int, 12> Jpll = {1, 3, 5, 7, 0, 2, 4, 6, 1, 3, 5, 7};
   // initialize constants
   // copied from healpix_base.cc SetNside function
   void prepare() {
@@ -272,9 +274,18 @@ protected:
   }
   // copied from HEALPix cxxutils.h isqrt function
   // Returns the integer n, which fulfills n*n<=arg<(n+1)*(n+1).
-  inline ham_uint isqrt(const ham_uint &n) {
+  inline ham_uint isqrt(const ham_uint &n) const {
     return static_cast<ham_uint>(
         std::floor(std::sqrt(static_cast<ham_float>(n) + 0.5)));
+  }
+  // copied from HEALPix healpix_base.h special_div function
+  // low-level hack to accelerate divisions with a result of [0;3]
+  inline ham_int special_div(const ham_int &a, const ham_int &b) const {
+    ham_int p{a};
+    ham_int q{b};
+    ham_int t{(p >= (q << 1))};
+    p -= t * (q << 1);
+    return (t << 1) + (p >= q);
   }
   // assigning correct pointing position
   // using HEALPix implementation, equivalent to HEALPix pix2ang function
@@ -597,6 +608,97 @@ public:
                               m.interpolate(this->Map->at(i).pointing()));
       }
     }
+  }
+  // copied from HEALPix healpix_base.cc ring2xyf function
+  void rpixxyf(const ham_uint pix, ham_int &ix, ham_int &iy,
+               ham_int &face_num) const {
+    ham_int iring, iphi, kshift, nr;
+    ham_int Nside_int{
+        static_cast<ham_int>(this->Nside)}; // for datatype convenience
+    ham_int nl2{2 * Nside_int};
+    // North Polar cap
+    if (pix < this->Ncap) {
+      iring = (1 + this->isqrt(1 + 2 * pix)) >> 1; // counted from North pole
+      iphi = (pix + 1) - 2 * iring * (iring - 1);
+      kshift = 0;
+      nr = iring;
+      face_num = this->special_div(iphi - 1, nr);
+    }
+    // Equatorial region
+    else if (pix < (this->Npix - this->Ncap)) {
+      ham_int ip{static_cast<ham_int>(pix - this->Ncap)};
+      ham_int tmp =
+          (this->Order >= 0) ? ip >> (this->Order + 2) : ip / (4 * Nside_int);
+      iring = tmp + Nside_int;
+      iphi = ip - tmp * 4 * Nside_int + 1;
+      kshift = (iring + Nside_int) & 1;
+      nr = Nside_int;
+      ham_int ire{tmp + 1};
+      ham_int irm{nl2 + 1 - tmp};
+      ham_int ifm{iphi - (ire >> 1) + Nside_int - 1};
+      ham_int ifp{iphi - (irm >> 1) + Nside_int - 1};
+      if (this->Order >= 0) {
+        ifm >>= this->Order;
+        ifp >>= this->Order;
+      } else {
+        ifm /= Nside_int;
+        ifp /= Nside_int;
+      }
+      face_num = (ifp == ifm) ? (ifp | 4) : ((ifp < ifm) ? ifp : (ifm + 8));
+    }
+    // South Polar cap
+    else {
+      ham_int ip{static_cast<ham_int>(this->Npix - pix)};
+      iring = (1 + this->isqrt(2 * ip - 1)) >> 1; // counted from South pole
+      iphi = 4 * iring + 1 - (ip - 2 * iring * (iring - 1));
+      kshift = 0;
+      nr = iring;
+      iring = 2 * nl2 - iring;
+      face_num = this->special_div(iphi - 1, nr) + 8;
+    }
+    ham_int irt{iring - ((2 + (face_num >> 2)) * Nside_int) + 1};
+    ham_int ipt{2 * iphi - this->Jpll[face_num] * nr - kshift - 1};
+    //  ham_uint ipt = 2*iphi- (((face_num&3)<<1)+1-((face_num>>2)&1))*nr -
+    //  kshift -1;
+    if (ipt >= nl2)
+      ipt -= 8 * Nside_int;
+    ix = (ipt - irt) >> 1;
+    iy = (-ipt - irt) >> 1;
+  }
+  // copied from HEALPix healpix_base.cc xyf2ring function
+  ham_uint xyfrpix(const ham_int &ix, const ham_int &iy,
+                   const ham_int &face_num) const {
+    ham_uint nl4{4 * this->Nside};
+    ham_uint jr{(this->Jrll[face_num] * this->Nside) - ix - iy - 1};
+    ham_uint nr, n_before;
+    ham_int kshift;
+    bool shifted;
+    // cpied from get_ring_info_small
+    if (jr < this->Nside) {
+      shifted = true;
+      nr = 4 * jr;
+      n_before = 2 * jr * (jr - 1);
+    } else if (jr < 3 * this->Nside) {
+      shifted = (((jr - this->Nside) & 1) == 0);
+      nr = 4 * this->Nside;
+      n_before = this->Ncap + (jr - this->Nside) * nr;
+    } else {
+      shifted = true;
+      ham_uint tmp = 4 * this->Nside - jr;
+      nr = 4 * tmp;
+      n_before = this->Npix - 2 * tmp * (tmp + 1);
+    }
+    // end of get_ring_info_small
+    nr >>= 2;
+    kshift = 1 - shifted;
+    ham_int jp{(this->Jpll[face_num] * static_cast<ham_int>(nr) + ix - iy + 1 +
+                kshift) /
+               2};
+    assert(jp <= 4 * static_cast<ham_int>(nr));
+    if (jp < 1)
+      jp += static_cast<ham_int>(
+          nl4); // assumption: if this triggers, then nl4==4*nr
+    return n_before + jp - 1;
   }
 };
 
