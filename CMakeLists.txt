@@ -31,6 +31,7 @@ OPTION(ENABLE_REPORT "Enable verbose report" ON)
 #--------------------------------------------#
 IF(ON_DOCKER)
 	SET(GTEST_HINTS /usr/local)
+	SET(GTEST_CIHINTS /tmp/local)
 	SET(INSTALL_ROOT_DIR /usr/local/hamdis)
 ELSE()
 	MESSAGE("apply customized library paths")
@@ -89,6 +90,8 @@ IF(ENABLE_TESTING)
   		HINTS
 		${GTEST_HINTS}/include
 		${GTEST_HINTS}/googletest/include
+		${GTEST_CIHINTS}/include
+		${GTEST_CIHINTS}/googletest/include
 	)
 	IF(NOT GTEST_INC_DIR)
   		MESSAGE(FATAL_ERROR ${GTEST_INC_DIR})
@@ -96,6 +99,8 @@ IF(ENABLE_TESTING)
 	FIND_PATH(GTEST_SOURCE_DIR gtest-all.cc
   		${GTEST_HINTS}/src
   		${GTEST_HINTS}/googletest/src
+		${GTEST_CIHINTS}/src
+  		${GTEST_CIHINTS}/googletest/src
 	)
 	IF(NOT GTEST_SOURCE_DIR)
   		MESSAGE(FATAL_ERROR ${GTEST_SOURCE_DIR})
