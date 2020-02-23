@@ -248,9 +248,9 @@ protected:
   }
   // copied from HEALPix cxxutils.h ilog2 function
   // Returns the largest integer n that fulfills 2^n<=arg.
-  inline unsigned int ilog2(const ham_uint &n) {
+  inline ham_uint ilog2(const ham_uint &n) {
     ham_uint tmp{n};
-    unsigned int res{0};
+    ham_uint res{0};
     while (tmp > 0x0000FFFF) {
       res += 16;
       tmp >>= 16;
