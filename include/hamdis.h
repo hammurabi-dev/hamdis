@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include <cgsunits.h>
 #include <hamp.h>
 #include <hamtype.h>
+#include <hamunits.h>
 
 // data type T
 // key structure of each sample point
@@ -191,6 +191,16 @@ public:
         this->Map->at(i).pointing(Hamp(0.0, 0.0));
         this->Map->at(i).data(0.0);
       }
+    }
+  }
+  // rescale
+  virtual void rescale(const ham_float &v) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (ham_uint i = 0; i < this->Map->size(); ++i) {
+      T current_data = this->Map->at(i).data();
+      this->Map->at(i).data(current_data * v);
     }
   }
   // undefine a certain Node
@@ -391,7 +401,7 @@ public:
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
-        static_cast<const ham_uint>(this->Npix));
+        this->Npix);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -405,7 +415,7 @@ public:
     this->Nside = n;
     this->prepare();
     this->Map = std::make_unique<std::vector<Node<T>>>(
-        static_cast<const ham_uint>(this->Npix));
+        this->Npix);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -482,7 +492,7 @@ public:
       this->Nside = n;
       this->prepare();
       this->Map = std::make_unique<std::vector<Node<T>>>(
-          static_cast<const ham_uint>(this->Npix));
+          this->Npix);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -493,31 +503,17 @@ public:
       }
     }
   }
-  // add maps
-  void accumulate(const Hampix<T> &m) {
-    // in same Nside
-    if (this->Npix == m.npix()) {
+  // rescale
+  void rescale(const ham_float &v) override {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for (ham_uint i = 0; i < this->Npix; ++i) {
-        const T cache = this->Map->at(i).data();
-        this->Map->at(i).data(cache + m.data(i));
-      }
-    }
-    // in different Nside
-    // use interpolation
-    else {
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-      for (ham_uint i = 0; i < this->Npix; ++i) {
-        const T cache = this->Map->at(i).data();
-        this->Map->at(i).data(cache +
-                              m.interpolate(this->Map->at(i).pointing()));
-      }
+    for (ham_uint i = 0; i < this->Npix; ++i) {
+      T current_data = this->Map->at(i).data();
+      this->Map->at(i).data(current_data * v);
     }
   }
+  // auxliliary function for up/downgrading
   // copied from HEALPix healpix_base.cc ring2xyf function
   void rpixxyf(const ham_uint pix, ham_int &ix, ham_int &iy,
                ham_int &face_num) const {
@@ -574,6 +570,7 @@ public:
     ix = (ipt - irt) >> 1;
     iy = (-ipt - irt) >> 1;
   }
+  // auxliliary function for up/downgrading
   // copied from HEALPix healpix_base.cc xyf2ring function
   ham_uint xyfrpix(const ham_int &ix, const ham_int &iy,
                    const ham_int &face_num) const {
@@ -699,6 +696,31 @@ public:
     }
     return (wtot == 0.0) ? static_cast<T>(this->undef)
                          : static_cast<T>(res / wtot);
+  }
+  // add maps
+  void accumulate(const Hampix<T> &m) {
+    // in same Nside
+    if (this->Npix == m.npix()) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (ham_uint i = 0; i < this->Npix; ++i) {
+        const T cache = this->Map->at(i).data();
+        this->Map->at(i).data(cache + m.data(i));
+      }
+    }
+    // in different Nside
+    // use interpolation
+    else {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for (ham_uint i = 0; i < this->Npix; ++i) {
+        const T cache = this->Map->at(i).data();
+        this->Map->at(i).data(cache +
+                              m.interpolate(this->Map->at(i).pointing()));
+      }
+    }
   }
 };
 
