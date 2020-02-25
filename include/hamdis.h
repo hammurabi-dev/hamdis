@@ -380,97 +380,6 @@ protected:
       startpix = this->Npix - startpix - ringpix;
     }
   }
-  // interpolate map at given pointing position (linear interpolation with
-  // nearby 4 pixels) copied from HEALPix healpix_map.h interpolated_value
-  // functions
-  T interpolate(const Hamp &point) const {
-    // calculate surrounding pixel indices and weights
-    // copied from HEALPix healpix_base.cc get_interpol function
-    std::array<ham_uint, 4> pix{};
-    std::array<ham_float, 4> wght{};
-    const ham_float z{std::cos(point.theta())};
-    const ham_uint ring1{rabove(z)};
-    const ham_uint ring2{ring1 + 1};
-    ham_float theta1{0.0}, theta2{0.0};
-    // ring above and ring below
-    if (ring1 > 0) {
-      ham_uint start;
-      ham_int ringpix;
-      bool shift;
-      this->rinfo(ring1, start, ringpix, theta1, shift);
-      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
-      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
-      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
-      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
-      ham_int i2{i1 + 1};
-      i1 += ringpix * (i1 < 0);
-      i2 -= ringpix * (i2 >= ringpix);
-      pix[0] = start + i1;
-      pix[1] = start + i2;
-      wght[0] = 1.0 - weight;
-      wght[1] = weight;
-    }
-    if (ring2 < (4 * this->Nside)) {
-      ham_uint start;
-      ham_int ringpix;
-      bool shift;
-      this->rinfo(ring2, start, ringpix, theta2, shift);
-      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
-      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
-      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
-      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
-      ham_int i2{i1 + 1};
-      i1 += ringpix * (i1 < 0);
-      i2 -= ringpix * (i2 >= ringpix);
-      pix[2] = start + i1;
-      pix[3] = start + i2;
-      wght[2] = 1.0 - weight;
-      wght[3] = weight;
-    }
-    // special cases + post correction
-    if (ring1 == 0) {
-      const ham_float wtheta{point.theta() / theta2};
-      wght[2] *= wtheta;
-      wght[3] *= wtheta;
-      const ham_float fac{(1.0 - wtheta) * 0.25};
-      wght[0] = fac;
-      wght[1] = fac;
-      wght[2] += fac;
-      wght[3] += fac;
-      pix[0] = (pix[2] + 2) & 3;
-      pix[1] = (pix[3] + 2) & 3;
-    } else if (ring2 == (4 * this->Nside)) {
-      ham_float wtheta{(point.theta() - theta1) / (cgs::pi - theta1)};
-      wght[0] *= (1.0 - wtheta);
-      wght[1] *= (1.0 - wtheta);
-      ham_float fac{wtheta * 0.25};
-      wght[0] += fac;
-      wght[1] += fac;
-      wght[2] = fac;
-      wght[3] = fac;
-      pix[2] = ((pix[0] + 2) & 3) + this->Npix - 4;
-      pix[3] = ((pix[1] + 2) & 3) + this->Npix - 4;
-    } else {
-      ham_float wtheta{(point.theta() - theta1) / (theta2 - theta1)};
-      wght[0] *= (1.0 - wtheta);
-      wght[1] *= (1.0 - wtheta);
-      wght[2] *= wtheta;
-      wght[3] *= wtheta;
-    }
-    // calculate interpolated result
-    // copied from HEALPix healpix_map.h interpolation function
-    ham_float wtot{0.0};
-    T res{static_cast<T>(0)};
-    for (int i = 0; i < 4; ++i) {
-      T val{this->Map->at(pix[i]).data()};
-      if (val > -1.63749e30) { // larger than undef, exclude the masked
-        res += val * wght[i];
-        wtot += wght[i];
-      }
-    }
-    return (wtot == 0.0) ? static_cast<T>(this->undef)
-                         : static_cast<T>(res / wtot);
-  }
 
 public:
   // dft constr
@@ -699,6 +608,97 @@ public:
       jp += static_cast<ham_int>(
           nl4); // assumption: if this triggers, then nl4==4*nr
     return n_before + jp - 1;
+  }
+  // interpolate map at given pointing position (linear interpolation with
+  // nearby 4 pixels) copied from HEALPix healpix_map.h interpolated_value
+  // functions
+  T interpolate(const Hamp &point) const {
+    // calculate surrounding pixel indices and weights
+    // copied from HEALPix healpix_base.cc get_interpol function
+    std::array<ham_uint, 4> pix{};
+    std::array<ham_float, 4> wght{};
+    const ham_float z{std::cos(point.theta())};
+    const ham_uint ring1{rabove(z)};
+    const ham_uint ring2{ring1 + 1};
+    ham_float theta1{0.0}, theta2{0.0};
+    // ring above and ring below
+    if (ring1 > 0) {
+      ham_uint start;
+      ham_int ringpix;
+      bool shift;
+      this->rinfo(ring1, start, ringpix, theta1, shift);
+      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
+      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
+      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      ham_int i2{i1 + 1};
+      i1 += ringpix * (i1 < 0);
+      i2 -= ringpix * (i2 >= ringpix);
+      pix[0] = start + i1;
+      pix[1] = start + i2;
+      wght[0] = 1.0 - weight;
+      wght[1] = weight;
+    }
+    if (ring2 < (4 * this->Nside)) {
+      ham_uint start;
+      ham_int ringpix;
+      bool shift;
+      this->rinfo(ring2, start, ringpix, theta2, shift);
+      const ham_float dphi{6.283185307179586476925286766559005768394 / ringpix};
+      const ham_float tmp{(point.phi() / dphi - 0.5 * shift)};
+      ham_int i1{static_cast<ham_int>(tmp) - static_cast<ham_int>(tmp < 0)};
+      const ham_float weight{(point.phi() - (i1 + 0.5 * shift) * dphi) / dphi};
+      ham_int i2{i1 + 1};
+      i1 += ringpix * (i1 < 0);
+      i2 -= ringpix * (i2 >= ringpix);
+      pix[2] = start + i1;
+      pix[3] = start + i2;
+      wght[2] = 1.0 - weight;
+      wght[3] = weight;
+    }
+    // special cases + post correction
+    if (ring1 == 0) {
+      const ham_float wtheta{point.theta() / theta2};
+      wght[2] *= wtheta;
+      wght[3] *= wtheta;
+      const ham_float fac{(1.0 - wtheta) * 0.25};
+      wght[0] = fac;
+      wght[1] = fac;
+      wght[2] += fac;
+      wght[3] += fac;
+      pix[0] = (pix[2] + 2) & 3;
+      pix[1] = (pix[3] + 2) & 3;
+    } else if (ring2 == (4 * this->Nside)) {
+      ham_float wtheta{(point.theta() - theta1) / (cgs::pi - theta1)};
+      wght[0] *= (1.0 - wtheta);
+      wght[1] *= (1.0 - wtheta);
+      ham_float fac{wtheta * 0.25};
+      wght[0] += fac;
+      wght[1] += fac;
+      wght[2] = fac;
+      wght[3] = fac;
+      pix[2] = ((pix[0] + 2) & 3) + this->Npix - 4;
+      pix[3] = ((pix[1] + 2) & 3) + this->Npix - 4;
+    } else {
+      ham_float wtheta{(point.theta() - theta1) / (theta2 - theta1)};
+      wght[0] *= (1.0 - wtheta);
+      wght[1] *= (1.0 - wtheta);
+      wght[2] *= wtheta;
+      wght[3] *= wtheta;
+    }
+    // calculate interpolated result
+    // copied from HEALPix healpix_map.h interpolation function
+    ham_float wtot{0.0};
+    T res{static_cast<T>(0)};
+    for (int i = 0; i < 4; ++i) {
+      T val{this->Map->at(pix[i]).data()};
+      if (val > -1.63749e30) { // larger than undef, exclude the masked
+        res += val * wght[i];
+        wtot += wght[i];
+      }
+    }
+    return (wtot == 0.0) ? static_cast<T>(this->undef)
+                         : static_cast<T>(res / wtot);
   }
 };
 

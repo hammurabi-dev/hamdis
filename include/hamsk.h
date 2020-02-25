@@ -2,6 +2,7 @@
 #define HAMMRABI_MSK_H
 
 #include <iostream>
+#include <map>
 #include <memory>
 #include <omp.h>
 #include <stdexcept>

@@ -20,7 +20,12 @@ protected:
   ham_float Theta{0};
   ham_float Phi{0};
   // normalize the angles so that 0<=theta<=pi and 0<=phi<2*pi
-  void norm();
+  void norm() {
+    this->Theta = std::fmod(this->Theta, cgs::pi);
+    this->Theta += (this->Theta < 0) * cgs::pi;
+    this->Phi = std::fmod(this->Phi, cgs::twopi);
+    this->Phi += (this->Phi < 0) * cgs::twopi;
+  }
 
 public:
   Hamp() = default;
@@ -79,20 +84,12 @@ public:
   // return phi value
   ham_float phi() const { return this->Phi; }
   // return to Cartesian versor
-  Hamvec<3, ham_float> versor() const;
+  Hamvec<3, ham_float> versor() const {
+    const ham_float sth{std::sin(this->Theta)};
+    return Hamvec<3, ham_float>{sth * std::cos(this->Phi),
+                                sth * std::sin(this->Phi),
+                                std::cos(this->Theta)};
+  }
 };
-
-void Hamp::norm() {
-  this->Theta = std::fmod(this->Theta, cgs::pi);
-  this->Theta += (this->Theta < 0) * cgs::pi;
-  this->Phi = std::fmod(this->Phi, cgs::twopi);
-  this->Phi += (this->Phi < 0) * cgs::twopi;
-}
-
-Hamvec<3, ham_float> Hamp::versor() const {
-  const ham_float sth{std::sin(this->Theta)};
-  return Hamvec<3, ham_float>{sth * std::cos(this->Phi),
-                              sth * std::sin(this->Phi), std::cos(this->Theta)};
-}
 
 #endif
