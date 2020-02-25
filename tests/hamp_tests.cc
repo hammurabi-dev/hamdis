@@ -3,9 +3,9 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-#include <cgsunits.h>
 #include <hamp.h>
 #include <hamtype.h>
+#include <hamunits.h>
 #include <hamvec.h>
 
 TEST(Hamp, basic) {

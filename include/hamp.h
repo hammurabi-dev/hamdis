@@ -11,8 +11,8 @@
 
 #include <cmath>
 
-#include <cgsunits.h>
 #include <hamtype.h>
+#include <hamunits.h>
 #include <hamvec.h>
 
 class Hamp {

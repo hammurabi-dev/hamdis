@@ -1,7 +1,7 @@
 // constants in CGS units
 
-#ifndef HAMMURABI_CGS_H
-#define HAMMURABI_CGS_H
+#ifndef HAMMURABI_UNITS_H
+#define HAMMURABI_UNITS_H
 
 #include <cmath>
 

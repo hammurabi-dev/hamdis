@@ -4,10 +4,10 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include <cgsunits.h>
 #include <hamdis.h>
 #include <hamp.h>
 #include <hamtype.h>
+#include <hamunits.h>
 
 TEST(Hamdis, basic) {
   // init
