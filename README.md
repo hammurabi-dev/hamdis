@@ -1,6 +1,6 @@
 # hamdis
 
-[![Build Status](https://travis-ci.org/gioacchinowang/hamdis.svg?branch=master)](https://travis-ci.org/gioacchinowang/hamdis)
+[![Build Status](https://travis-ci.org/hammurabi-dev/hamdis.svg?branch=master)](https://travis-ci.org/hammurabi-dev/hamdis)
 
 - the **HAM**murabi **DIS**cretization supporting module
 
